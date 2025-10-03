@@ -1,4 +1,4 @@
-﻿# 📘 DITA-OT Publishing with GitHub Actions
+﻿# 📘 CPTSC 2025 Structured Authoring Workshop Template
 
 Template repository for publishing **Bootstrap-themed HTML** and **PDF** outputs using [DITA-OT build GitHub Action](https://github.com/dita-ot/dita-ot-action).
 
@@ -65,7 +65,7 @@ Put all of your DITA content inside the `dita` directory:
 
 - 📄 **Main map name**: The default workflow expects **`document.ditamap`**.  
   - You *can* rename it, but then you must update the workflow where it references `document.ditamap` (open `.github/workflows/ci.yml` and search for that filename).
-- 🏠 **Homepage**: Create `dita/index.dita` to serve as the site’s landing page.
+- 🏠 **Homepage**: `dita/index.dita` will serve as the site’s landing page.
   - You need to reference your `index.dita` as the first topic reference in your `document.ditamap`. Otherwise, your deliverables will not have a home page or introduction.
 - 📁 Keep topics, maps, and media under the `dita/` folder.
 
