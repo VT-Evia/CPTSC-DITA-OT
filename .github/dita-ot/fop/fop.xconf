@@ -1,34 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <fop version="1.0">
-  <strict-configuration>true</strict-configuration>
   <renderers>
     <renderer mime="application/pdf">
-      <!-- REQUIRED for tagging -->
       <accessibility>true</accessibility>
-
-      <!-- Strongly recommended: turns on PDF/UA structure where supported -->
+      <!-- If your FOP is new enough, this helps. If it errors, remove it. -->
       <pdf-ua-mode>true</pdf-ua-mode>
-
-      <!-- Optional: modern PDF version -->
-      <pdf-version>1.7</pdf-version>
-
-      <!-- Optional: compression -->
-      <filterList>
-        <value>flate</value>
-      </filterList>
-
-      <!-- Fonts: either auto-detect or explicitly embed project fonts -->
-      <fonts>
-        <auto-detect/>
-        <!-- Example of explicit embedding:
-        <font kerning="yes" embed-url="fonts/SourceSans3-Regular.ttf">
-          <font-triplet name="Source Sans 3" style="normal" weight="normal"/>
-        </font>
-        <font kerning="yes" embed-url="fonts/SourceSans3-Bold.ttf">
-          <font-triplet name="Source Sans 3" style="normal" weight="bold"/>
-        </font>
-        -->
-      </fonts>
     </renderer>
   </renderers>
 </fop>
