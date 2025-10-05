@@ -33,7 +33,7 @@ page:
   mirror-margins: true
 # ↑ end-page-settings ↑
 
-# ↓ add-header-setup ↓
+# ↓ add-header-setup (SAFE CONTENT) ↓
 header:
   color: $brand-color-secondary
   display-align: before
@@ -42,12 +42,15 @@ header:
   padding-after: 6pt
   padding-before: 12pt
   start-indent: 10mm
+  # Use map title so header is never empty on any sequence (front matter, etc.)
   odd:
-    content: '{chapter}'
+    content: '{mapTitle}'
     text-align: end
   even:
-    content: '{title}'
+    content: '{mapTitle}'
     text-align: start
+    cover:
+      display: none
 # ↑ end-header-setup ↑
 
 # ↓ add-footer-setup ↓
@@ -87,7 +90,6 @@ style:
   codeph:
     color: $brand-color-secondary
   # ↓ set-cover-page ↓
-  
   cover:
     background-image: alessandro-bianchi-_kdTyfnUFAc-unsplash.jpg
     background-repeat: no-repeat
