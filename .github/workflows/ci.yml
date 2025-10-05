@@ -47,7 +47,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages
           FOLDER: out/html
-
+     
       - name: Build PDF 🖨️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -60,25 +60,31 @@ jobs:
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
-            # POSIX sh-safe flags (no pipefail)
+            # POSIX sh-safe (no pipefail)
             set -eu
             THEME="$GITHUB_WORKSPACE/.github/themes/theme.yaml"
             LOGDIR="$GITHUB_WORKSPACE/out/pdf/logs"
             TEMPDIR="$GITHUB_WORKSPACE/out/pdf/temp"
+
+            # Create dirs BEFORE any tee
+            mkdir -p "$LOGDIR" "$TEMPDIR"
+
             RUNLOG="$LOGDIR/runner.log"
             DITALOG="$LOGDIR/dita.log"
+            : > "$RUNLOG"      # touch
+            : > "$DITALOG"     # touch
 
             echo "=== Paths ===" | tee -a "$RUNLOG"
             echo "THEME:   $THEME" | tee -a "$RUNLOG"
             echo "LOGDIR:  $LOGDIR" | tee -a "$RUNLOG"
             echo "TEMPDIR: $TEMPDIR" | tee -a "$RUNLOG"
-            mkdir -p "$LOGDIR" "$TEMPDIR"
+
             [ -f "$THEME" ] || { echo "Theme file not found at $THEME" | tee -a "$RUNLOG"; exit 1; }
 
-            echo "=== Show header/footer section from theme ===" | tee -a "$RUNLOG"
+            echo "=== Header/Footer excerpt from theme ===" | tee -a "$RUNLOG"
             awk 'f{print} /^(header:|footer:)/{f=1} /^style:/{exit}' "$THEME" | tee -a "$RUNLOG" || true
 
-            # Run DITA-OT with absolute paths, DEBUG verbosity, and workspace temp/logs
+            # Run DITA-OT with absolute paths, DEBUG, and workspace temp/logs
             dita -i "$GITHUB_WORKSPACE/dita/document.ditamap" \
                  -o "$GITHUB_WORKSPACE/out/pdf" \
                  -f pdf \
@@ -91,7 +97,7 @@ jobs:
                  --verbosity DEBUG \
                  --logfile "$DITALOG" 2>&1 | tee -a "$RUNLOG"
 
-      # Make sure host steps can write to out/ even if the container created root-owned files
+      # Make sure host steps can write even if container created root-owned files
       - name: Fix permissions (after PDF)
         if: always()
         run: |
@@ -138,6 +144,7 @@ jobs:
           path: |
             out/pdf/temp/**
             out/pdf/logs/**
+
 
       # Upload PDF only on success
       - name: Upload PDF 📚
