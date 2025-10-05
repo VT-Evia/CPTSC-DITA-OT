@@ -48,6 +48,8 @@ jobs:
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
+            set -e
+            mkdir -p "$GITHUB_WORKSPACE/out/pdf/temp" "$GITHUB_WORKSPACE/out/pdf/logs"
             dita -i dita/document.ditamap \
                  -o out/pdf \
                  -f pdf \
@@ -55,9 +57,11 @@ jobs:
                  --org.dita.index.skip="yes" \
                  -Dpdf.formatter=fop \
                  -Dargs.fo.userconfig=$GITHUB_WORKSPACE/fop/fop.xconf \
-                 -Dclean.temp=no
+                 -Dclean.temp=no \
+                 -Ddita.temp.dir=$GITHUB_WORKSPACE/out/pdf/temp \
+                 -Dargs.logdir=$GITHUB_WORKSPACE/out/pdf/logs
 
-      # 🔍 DIAGNOSTIC: runs only if the PDF build failed. Shows context around static-content
+      # 🔍 DIAGNOSTIC (runs only if the PDF build fails)
       - name: Debug FO for empty static-content
         if: failure()
         run: |
@@ -67,8 +71,7 @@ jobs:
           echo "=== Grep context around <fo:static-content> (10 lines of context) ==="
           grep -R -n -C 10 "<fo:static-content" out/pdf/temp || true
           echo
-          echo "=== Heuristic check for EMPTY static-content blocks ==="
-          # Walk each FO and report static-content sections that contain no <fo:block>
+          echo "=== Heuristic: flag static-content blocks with no <fo:block> ==="
           for fo in $(find out/pdf/temp -type f -name '*.fo'); do
             awk '
               /<fo:static-content/ { inSC=1; start=NR; hasBlock=0 }
@@ -84,13 +87,20 @@ jobs:
             ' "$fo" || true
           done
 
-      # 📦 Upload temp FO for local inspection (only when the build fails)
+      # 📦 Upload temp FO & logs for local inspection (only when the build fails)
       - name: Upload FO temp (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: fo-temp
           path: out/pdf/temp/**
+
+      - name: Upload DITA logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dita-logs
+          path: out/pdf/logs/**
 
       - name: Upload PDF 📚
         if: success()
