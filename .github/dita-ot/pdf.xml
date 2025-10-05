@@ -17,11 +17,7 @@
       <param name="outputFile.base" value="userguide"/>
       <param name="processing-mode" value="strict"/>
 
-      <!-- ensure we are using FOP -->
-      <param name="pdf.formatter" value="fop"/>
-
-      <!-- point to the FOP user config RELATIVE TO THIS PROJECT FILE -->
-      <param name="args.fo.userconfig" value="${project.dir}/fop/fop.xconf"/>
+  
     </publication>
   </deliverable>
 </project>

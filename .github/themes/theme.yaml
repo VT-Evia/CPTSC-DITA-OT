@@ -1,8 +1,8 @@
-# Sample PDF theme
+# Sample PDF theme (safe headers/footers everywhere)
 #
 # https://www.dita-ot.org/dev/topics/sample-pdf-theme.html
 
-# ↓ add-brand-colors ↓
+# ↓ brand colors ↓
 brand:
   color:
     primary: '#861F41'
@@ -17,30 +17,159 @@ brand:
         info: '#dce4f0'
         tip: '#d1e7dd'
     xml-domain: '#639'
-# ↑ end-brand-colors ↑
 
-# ↓ add-font-stacks ↓
+# ↓ font stacks ↓
 pdf2:
   font:
     sans: 'Helvetica, Arial Unicode MS, Tahoma, Batang, SimSun'
     serif: 'Times New Roman, Times, Arial Unicode MS, Tahoma, Batang, SimSun'
     monospaced: 'Courier New, Courier, Arial Unicode MS, Tahoma, Batang, SimSun'
-# ↑ end-font-stacks ↑
 
-# ↓ add-page-settings ↓
+# ↓ page settings ↓
 page:
   size: PA4
   mirror-margins: true
-# ↑ end-page-settings ↑
 
-# ↓ globally disable headers and footers ↓
+# ↓ headers: guarantee non-empty content on ALL sequences ↓
+# We use '{mapTitle}' where possible; fall back to a single space " " to ensure a block exists.
 header:
-  display: none
+  color: $brand-color-secondary
+  display-align: before
+  end-indent: 10mm
+  font-family: $pdf2-font-sans
+  padding-after: 6pt
+  padding-before: 12pt
+  start-indent: 10mm
 
+  # Default body/chapters
+  odd:
+    content: '{mapTitle}'
+    text-align: end
+  even:
+    content: '{mapTitle}'
+    text-align: start
+
+  # Sequences that can be empty: use a single space to force a block if tokens resolve empty
+  cover:
+    odd:
+      content: ' '
+      text-align: end
+    even:
+      content: ' '
+      text-align: start
+  blank:
+    odd:
+      content: ' '
+      text-align: end
+    even:
+      content: ' '
+      text-align: start
+  front-matter:
+    odd:
+      content: '{mapTitle}'
+      text-align: end
+    even:
+      content: '{mapTitle}'
+      text-align: start
+  toc:
+    odd:
+      content: '{mapTitle}'
+      text-align: end
+    even:
+      content: '{mapTitle}'
+      text-align: start
+  back-matter:
+    odd:
+      content: '{mapTitle}'
+      text-align: end
+    even:
+      content: '{mapTitle}'
+      text-align: start
+  appendix:
+    odd:
+      content: '{mapTitle}'
+      text-align: end
+    even:
+      content: '{mapTitle}'
+      text-align: start
+  index:
+    odd:
+      content: '{mapTitle}'
+      text-align: end
+    even:
+      content: '{mapTitle}'
+      text-align: start
+
+# ↓ footers: guarantee non-empty content on ALL sequences ↓
 footer:
-  display: none
-# ↑ end-disable-headers-footers ↑
+  color: $brand-color-secondary
+  end-indent: 10mm
+  font-family: $pdf2-font-sans
+  padding-after: 12pt
+  padding-before: 6pt
+  start-indent: 10mm
 
+  odd:
+    content: '{folio}'
+    font-weight: bold
+    text-align: end
+  even:
+    content: '{folio}'
+    font-weight: bold
+    text-align: start
+
+  # On sequences that might suppress folio, force a space so static-content is never empty
+  cover:
+    odd:
+      content: ' '
+      text-align: end
+    even:
+      content: ' '
+      text-align: start
+  blank:
+    odd:
+      content: ' '
+      text-align: end
+    even:
+      content: ' '
+      text-align: start
+  front-matter:
+    odd:
+      content: '{folio}'
+      text-align: end
+    even:
+      content: '{folio}'
+      text-align: start
+  toc:
+    odd:
+      content: '{folio}'
+      text-align: end
+    even:
+      content: '{folio}'
+      text-align: start
+  back-matter:
+    odd:
+      content: '{folio}'
+      text-align: end
+    even:
+      content: '{folio}'
+      text-align: start
+  appendix:
+    odd:
+      content: '{folio}'
+      text-align: end
+    even:
+      content: '{folio}'
+      text-align: start
+  index:
+    odd:
+      content: '{folio}'
+      text-align: end
+    even:
+      content: '{folio}'
+      text-align: start
+
+# ↓ styles ↓
 style:
   body:
     font-family: $pdf2-font-serif
@@ -59,7 +188,7 @@ style:
     space-after: 8pt
   codeph:
     color: $brand-color-secondary
-  # ↓ set-cover-page ↓
+  # cover page
   cover:
     background-image: alessandro-bianchi-_kdTyfnUFAc-unsplash.jpg
     background-repeat: no-repeat
@@ -70,7 +199,6 @@ style:
     font-weight: bold
     line-height: 1.5
     space-before: 195mm
-  # ↑ end-cover-page ↑
   example-title:
     color: $brand-color-secondary
   fig:
