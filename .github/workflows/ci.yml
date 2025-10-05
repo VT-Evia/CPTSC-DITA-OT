@@ -1,24 +1,16 @@
 name: CI
-
-on:
+'on':
   push:
-    branches: [ master ]
+    branches:
+      - master
   workflow_dispatch:
-
 jobs:
   build-dita:
     name: Build DITA
     runs-on: ubuntu-latest
     steps:
       - name: Git checkout
-        uses: actions/checkout@v4
-
-      # Ensure we own out/ before any Docker step writes as root
-      - name: Prepare workspace dirs
-        run: |
-          mkdir -p out/html out/pdf
-          chmod -R 777 out || true
-
+        uses: actions/checkout@v2
       - name: Build Bootstrap ⚙️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -35,58 +27,32 @@ jobs:
             fox.jason.favicon
             fox.jason.open-graph
           project: .github/dita-ot/html.xml
-
-      # Fix any root-owned files created by the container
-      - name: Fix permissions (after HTML)
-        if: always()
-        run: |
-          sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE/out" || true
-
+          # If you have a DITAVal, add the following:
+          # -- build: | 
+            #  dita -i dita/document.ditamap -o out/html -f html5 --filter=myfilter.ditaval
       - name: Deploy HTML 🚀
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: out/html
-
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: out/html # The folder the action should deploy.
       - name: Build PDF 🖨️
         uses: dita-ot/dita-ot-action@4.3
         with:
-         install: |
-          apt-get update -q
-          export DEBIAN_FRONTEND=noninteractive
-          apt-get install -qy --no-install-recommends nodejs
-          nodejs -v
-         plugins: |
-          fox.jason.extend.css
-          fox.jason.prismjs
-          ./plugins/edu.eviavt.pdfvars        # <-- install our local override
-         build: |
-          dita \
-           --input=dita/document.ditamap \
-           --format=pdf2 \
-           --theme=.github/themes/theme.yaml \
-          --temp=out/pdf/temp-sys \
-          --verbose \
-          -Dclean.temp=no \
-          -Dpdf.formatter=fop \
-          -Dargs.fo.userconfig=$GITHUB_WORKSPACE/fop/fop.xconf
-
-
-      # 📦 Upload FO & logs when the build fails
-      - name: Upload FO & logs (on failure)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: fo-and-logs
-          path: |
-            out/pdf/temp/**
-            out/pdf/logs/**
-
-      # Upload PDF only on success
+          install: |
+            apt-get update -q
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get install -qy --no-install-recommends nodejs
+            nodejs -v
+          plugins: |
+            fox.jason.extend.css
+            fox.jason.prismjs
+          build: |
+              dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes"
+         # If you have a DITAVal, replace the previous line with the following:
+            # dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes" --filter=myfilter.ditaval
       - name: Upload PDF 📚
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: dita-pdf
-          path: out/pdf/*.pdf
+          path: 'out/pdf'
