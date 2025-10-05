@@ -1,5 +1,6 @@
 name: CI
-'on':
+
+on:
   push:
     branches: [ master ]
   workflow_dispatch:
@@ -10,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Git checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       # Ensure we own out/ before any Docker step writes as root
       - name: Prepare workspace dirs
@@ -47,7 +48,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages
           FOLDER: out/html
-     
+
       - name: Build PDF 🖨️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -60,31 +61,33 @@ jobs:
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
-            # POSIX sh-safe (no pipefail)
+            # POSIX /bin/sh (no pipefail)
             set -eu
             THEME="$GITHUB_WORKSPACE/.github/themes/theme.yaml"
             LOGDIR="$GITHUB_WORKSPACE/out/pdf/logs"
             TEMPDIR="$GITHUB_WORKSPACE/out/pdf/temp"
 
-            # Create dirs BEFORE any tee
+            # Ensure dirs & files exist BEFORE tee/logging
             mkdir -p "$LOGDIR" "$TEMPDIR"
-
             RUNLOG="$LOGDIR/runner.log"
             DITALOG="$LOGDIR/dita.log"
-            : > "$RUNLOG"      # touch
-            : > "$DITALOG"     # touch
+            : > "$RUNLOG"
+            : > "$DITALOG"
 
             echo "=== Paths ===" | tee -a "$RUNLOG"
             echo "THEME:   $THEME" | tee -a "$RUNLOG"
             echo "LOGDIR:  $LOGDIR" | tee -a "$RUNLOG"
             echo "TEMPDIR: $TEMPDIR" | tee -a "$RUNLOG"
 
-            [ -f "$THEME" ] || { echo "Theme file not found at $THEME" | tee -a "$RUNLOG"; exit 1; }
+            if [ ! -f "$THEME" ]; then
+              echo "Theme file not found at $THEME" | tee -a "$RUNLOG"
+              exit 1
+            fi
 
             echo "=== Header/Footer excerpt from theme ===" | tee -a "$RUNLOG"
             awk 'f{print} /^(header:|footer:)/{f=1} /^style:/{exit}' "$THEME" | tee -a "$RUNLOG" || true
 
-            # Run DITA-OT with absolute paths, DEBUG, and workspace temp/logs
+            # Run DITA-OT: note -v (verbose) instead of --verbosity
             dita -i "$GITHUB_WORKSPACE/dita/document.ditamap" \
                  -o "$GITHUB_WORKSPACE/out/pdf" \
                  -f pdf \
@@ -94,10 +97,10 @@ jobs:
                  -Dargs.fo.userconfig="$GITHUB_WORKSPACE/fop/fop.xconf" \
                  -Dclean.temp=no \
                  -t "$TEMPDIR" \
-                 --verbosity DEBUG \
+                 -v \
                  --logfile "$DITALOG" 2>&1 | tee -a "$RUNLOG"
 
-      # Make sure host steps can write even if container created root-owned files
+      # Make sure host steps can write even if the container created root-owned files
       - name: Fix permissions (after PDF)
         if: always()
         run: |
@@ -144,7 +147,6 @@ jobs:
           path: |
             out/pdf/temp/**
             out/pdf/logs/**
-
 
       # Upload PDF only on success
       - name: Upload PDF 📚
