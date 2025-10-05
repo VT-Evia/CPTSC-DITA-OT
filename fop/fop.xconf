@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <fop version="1.0">
+  <strict-configuration>true</strict-configuration>
   <renderers>
     <renderer mime="application/pdf">
+      <!-- Turn on tagged/accessible PDF -->
       <accessibility>true</accessibility>
-      <!-- If your FOP is new enough, this helps. If it errors, remove it. -->
-      <pdf-ua-mode>true</pdf-ua-mode>
+      <!-- Optional but recommended: better structure tree order -->
+      <pdf-a-mode>disabled</pdf-a-mode>
     </renderer>
   </renderers>
 </fop>

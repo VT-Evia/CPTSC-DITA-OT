@@ -64,7 +64,7 @@ jobs:
          build: |
           dita \
            --input=dita/document.ditamap \
-           --format=pdf \
+           --format=pdf2 \
            --theme=.github/themes/theme.yaml \
           --temp=out/pdf/temp-sys \
           --verbose \
