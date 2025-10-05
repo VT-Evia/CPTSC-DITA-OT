@@ -66,9 +66,10 @@ jobs:
             THEME="$GITHUB_WORKSPACE/.github/themes/theme.yaml"
             LOGDIR="$GITHUB_WORKSPACE/out/pdf/logs"
             TEMPDIR="$GITHUB_WORKSPACE/out/pdf/temp"
+            OUTDIR="$GITHUB_WORKSPACE/out/pdf"
 
             # Ensure dirs & files exist BEFORE tee/logging
-            mkdir -p "$LOGDIR" "$TEMPDIR"
+            mkdir -p "$LOGDIR" "$TEMPDIR" "$OUTDIR"
             RUNLOG="$LOGDIR/runner.log"
             DITALOG="$LOGDIR/dita.log"
             : > "$RUNLOG"
@@ -78,6 +79,7 @@ jobs:
             echo "THEME:   $THEME" | tee -a "$RUNLOG"
             echo "LOGDIR:  $LOGDIR" | tee -a "$RUNLOG"
             echo "TEMPDIR: $TEMPDIR" | tee -a "$RUNLOG"
+            echo "OUTDIR:  $OUTDIR" | tee -a "$RUNLOG"
 
             if [ ! -f "$THEME" ]; then
               echo "Theme file not found at $THEME" | tee -a "$RUNLOG"
@@ -87,14 +89,16 @@ jobs:
             echo "=== Header/Footer excerpt from theme ===" | tee -a "$RUNLOG"
             awk 'f{print} /^(header:|footer:)/{f=1} /^style:/{exit}' "$THEME" | tee -a "$RUNLOG" || true
 
-            # Run DITA-OT: note -v (verbose) instead of --verbosity
+            # Build PDF (note: -v instead of --verbosity)
+            # outputFile.base gives a predictable final name: userguide.pdf
             dita -i "$GITHUB_WORKSPACE/dita/document.ditamap" \
-                 -o "$GITHUB_WORKSPACE/out/pdf" \
+                 -o "$OUTDIR" \
                  -f pdf \
                  --theme="$THEME" \
                  --org.dita.index.skip="yes" \
                  -Dpdf.formatter=fop \
                  -Dargs.fo.userconfig="$GITHUB_WORKSPACE/fop/fop.xconf" \
+                 -DoutputFile.base=userguide \
                  -Dclean.temp=no \
                  -t "$TEMPDIR" \
                  -v \
@@ -106,7 +110,45 @@ jobs:
         run: |
           sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE/out" || true
 
-     
+      # ✅ Verify that a PDF exists; if not, print a concise error summary and fail
+      - name: Verify PDF output
+        run: |
+          set -eu
+          PDF_FOUND="$(find out/pdf -maxdepth 1 -type f -name '*.pdf' | wc -l | tr -d ' ')"
+          if [ "$PDF_FOUND" -eq 0 ]; then
+            echo "❌ No PDF produced under out/pdf"
+            echo
+            echo "=== Top ERROR lines from logs/dita.log (if present) ==="
+            if [ -f out/pdf/logs/dita.log ]; then
+              grep -Ei '(\[ERROR\]|FOPException|ValidationException|static-content|Exception)' out/pdf/logs/dita.log | tail -n 50 || true
+              echo
+              echo "=== Tail of logs/dita.log ==="
+              tail -n 200 out/pdf/logs/dita.log || true
+            else
+              echo "No logs/dita.log present."
+            fi
+            echo
+            echo "=== Tail of logs/runner.log ==="
+            if [ -f out/pdf/logs/runner.log ]; then
+              tail -n 200 out/pdf/logs/runner.log || true
+            else
+              echo "No logs/runner.log present."
+            fi
+            exit 1
+          else
+            echo "✅ PDF produced:"
+            find out/pdf -maxdepth 1 -type f -name '*.pdf' -print
+          fi
+
+      # 📦 Upload FO & logs when the build fails
+      - name: Upload FO & logs (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fo-and-logs
+          path: |
+            out/pdf/temp/**
+            out/pdf/logs/**
 
       # Upload PDF only on success
       - name: Upload PDF 📚
@@ -114,4 +156,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dita-pdf
-          path: out/pdf
+          path: out/pdf/*.pdf
