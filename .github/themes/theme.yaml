@@ -1,4 +1,4 @@
-# Sample PDF theme (with safe header/footer content blocks)
+# Sample PDF theme (safe header/footer; fixed sequence keys)
 #
 # https://www.dita-ot.org/dev/topics/sample-pdf-theme.html
 
@@ -54,22 +54,29 @@ header:
     content:
       odd: ' '
       even: ' '
-  front-matter:
+
+  # ✅ Correct key: frontmatter (no hyphen)
+  frontmatter:
     content:
       odd: ' '
       even: ' '
+
   toc:
     content:
       odd: '{mapTitle}'
       even: '{mapTitle}'
-  back-matter:
+
+  # ✅ Correct key: backmatter (no hyphen)
+  backmatter:
     content:
       odd: '{mapTitle}'
       even: '{mapTitle}'
+
   appendix:
     content:
       odd: '{mapTitle}'
       even: '{mapTitle}'
+
   index:
     content:
       odd: '{mapTitle}'
@@ -89,7 +96,6 @@ footer:
     odd: '{folio}'
     even: '{folio}'
 
-  # Ensure sequences never emit empty static-content
   cover:
     content:
       odd: ' '
@@ -98,22 +104,29 @@ footer:
     content:
       odd: ' '
       even: ' '
-  front-matter:
+
+  # ✅ Correct key: frontmatter (no hyphen)
+  frontmatter:
     content:
       odd: ' '
       even: ' '
+
   toc:
     content:
       odd: '{folio}'
       even: '{folio}'
-  back-matter:
+
+  # ✅ Correct key: backmatter (no hyphen)
+  backmatter:
     content:
       odd: '{folio}'
       even: '{folio}'
+
   appendix:
     content:
       odd: '{folio}'
       even: '{folio}'
+
   index:
     content:
       odd: '{folio}'
