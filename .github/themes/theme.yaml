@@ -1,8 +1,5 @@
-# Sample PDF theme (safe header/footer; fixed sequence keys)
-#
-# https://www.dita-ot.org/dev/topics/sample-pdf-theme.html
+# Sample PDF theme (fixed header/footer nesting; safe content for all sequences)
 
-# ↓ brand colors ↓
 brand:
   color:
     primary: '#861F41'
@@ -18,19 +15,17 @@ brand:
         tip: '#d1e7dd'
     xml-domain: '#639'
 
-# ↓ font stacks ↓
 pdf2:
   font:
     sans: 'Helvetica, Arial Unicode MS, Tahoma, Batang, SimSun'
     serif: 'Times New Roman, Times, Arial Unicode MS, Tahoma, Batang, SimSun'
     monospaced: 'Courier New, Courier, Arial Unicode MS, Tahoma, Batang, SimSun'
 
-# ↓ page settings ↓
 page:
   size: PA4
   mirror-margins: true
 
-# ↓ HEADER — defaults + sequence-specific content (never empty) ↓
+# ---------- HEADER (correct nesting) ----------
 header:
   color: $brand-color-secondary
   display-align: before
@@ -40,49 +35,73 @@ header:
   padding-before: 12pt
   start-indent: 10mm
 
-  # Default (body/chapters) — always non-empty
-  content:
-    odd: '{mapTitle}'
-    even: '{mapTitle}'
+  # Defaults (body/chapters) — always non-empty
+  odd:
+    content: '{mapTitle}'
+    text-align: end
+  even:
+    content: '{mapTitle}'
+    text-align: start
 
-  # Sequences that can be empty — force a single space
+  # Sequences that may be empty: force a space so FOP gets a block
   cover:
-    content:
-      odd: ' '
-      even: ' '
+    odd:
+      content: ' '
+      text-align: end
+    even:
+      content: ' '
+      text-align: start
   blank:
-    content:
-      odd: ' '
-      even: ' '
+    odd:
+      content: ' '
+      text-align: end
+    even:
+      content: ' '
+      text-align: start
 
   # ✅ Correct key: frontmatter (no hyphen)
   frontmatter:
-    content:
-      odd: ' '
-      even: ' '
+    odd:
+      content: ' '
+      text-align: end
+    even:
+      content: ' '
+      text-align: start
 
   toc:
-    content:
-      odd: '{mapTitle}'
-      even: '{mapTitle}'
+    odd:
+      content: '{mapTitle}'
+      text-align: end
+    even:
+      content: '{mapTitle}'
+      text-align: start
 
   # ✅ Correct key: backmatter (no hyphen)
   backmatter:
-    content:
-      odd: '{mapTitle}'
-      even: '{mapTitle}'
+    odd:
+      content: '{mapTitle}'
+      text-align: end
+    even:
+      content: '{mapTitle}'
+      text-align: start
 
   appendix:
-    content:
-      odd: '{mapTitle}'
-      even: '{mapTitle}'
+    odd:
+      content: '{mapTitle}'
+      text-align: end
+    even:
+      content: '{mapTitle}'
+      text-align: start
 
   index:
-    content:
-      odd: '{mapTitle}'
-      even: '{mapTitle}'
+    odd:
+      content: '{mapTitle}'
+      text-align: end
+    even:
+      content: '{mapTitle}'
+      text-align: start
 
-# ↓ FOOTER — defaults + sequence-specific content (never empty) ↓
+# ---------- FOOTER (correct nesting) ----------
 footer:
   color: $brand-color-secondary
   end-indent: 10mm
@@ -91,48 +110,74 @@ footer:
   padding-before: 6pt
   start-indent: 10mm
 
-  # Default (body/chapters)
-  content:
-    odd: '{folio}'
-    even: '{folio}'
+  # Defaults (body/chapters)
+  odd:
+    content: '{folio}'
+    font-weight: bold
+    text-align: end
+  even:
+    content: '{folio}'
+    font-weight: bold
+    text-align: start
 
   cover:
-    content:
-      odd: ' '
-      even: ' '
+    odd:
+      content: ' '
+      text-align: end
+    even:
+      content: ' '
+      text-align: start
   blank:
-    content:
-      odd: ' '
-      even: ' '
+    odd:
+      content: ' '
+      text-align: end
+    even:
+      content: ' '
+      text-align: start
 
-  # ✅ Correct key: frontmatter (no hyphen)
+  # ✅ frontmatter
   frontmatter:
-    content:
-      odd: ' '
-      even: ' '
+    odd:
+      content: ' '
+      text-align: end
+    even:
+      content: ' '
+      text-align: start
 
   toc:
-    content:
-      odd: '{folio}'
-      even: '{folio}'
+    odd:
+      content: '{folio}'
+      text-align: end
+    even:
+      content: '{folio}'
+      text-align: start
 
-  # ✅ Correct key: backmatter (no hyphen)
+  # ✅ backmatter
   backmatter:
-    content:
-      odd: '{folio}'
-      even: '{folio}'
+    odd:
+      content: '{folio}'
+      text-align: end
+    even:
+      content: '{folio}'
+      text-align: start
 
   appendix:
-    content:
-      odd: '{folio}'
-      even: '{folio}'
+    odd:
+      content: '{folio}'
+      text-align: end
+    even:
+      content: '{folio}'
+      text-align: start
 
   index:
-    content:
-      odd: '{folio}'
-      even: '{folio}'
+    odd:
+      content: '{folio}'
+      text-align: end
+    even:
+      content: '{folio}'
+      text-align: start
 
-# ↓ styles ↓
+# ---------- STYLES ----------
 style:
   body:
     font-family: $pdf2-font-serif
