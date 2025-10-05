@@ -48,39 +48,68 @@ jobs:
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
-            set -e
+            set -euo pipefail
             THEME="$GITHUB_WORKSPACE/.github/themes/theme.yaml"
-            echo "=== Theme path: $THEME ==="
-            test -f "$THEME" || (echo "Theme file not found!" && exit 1)
-            echo "=== Show header/footer section from theme ==="
-            awk 'f{print} /^(header:|footer:)/{f=1} /^style:/{exit}' "$THEME" || true
+            LOGDIR="$GITHUB_WORKSPACE/out/pdf/logs"
+            TEMPDIR="$GITHUB_WORKSPACE/out/pdf/temp"
+            RUNLOG="$LOGDIR/runner.log"
+            DITALOG="$LOGDIR/dita.log"
 
-            mkdir -p "$GITHUB_WORKSPACE/out/pdf/temp" "$GITHUB_WORKSPACE/out/pdf/logs"
+            echo "=== Paths ==="
+            echo "THEME:   $THEME"
+            echo "LOGDIR:  $LOGDIR"
+            echo "TEMPDIR: $TEMPDIR"
+            mkdir -p "$LOGDIR" "$TEMPDIR"
+            test -f "$THEME" || (echo "Theme file not found at $THEME" | tee -a "$RUNLOG"; exit 1)
 
-            dita -i dita/document.ditamap \
-                 -o out/pdf \
+            echo "=== Show header/footer section from theme ===" | tee -a "$RUNLOG"
+            awk 'f{print} /^(header:|footer:)/{f=1} /^style:/{exit}' "$THEME" | tee -a "$RUNLOG" || true
+
+            echo "=== Running DITA-OT (DEBUG verbosity) ===" | tee -a "$RUNLOG"
+            # Use tee so we always capture console output even if --logfile isn't created
+            set -x
+            dita -i "$GITHUB_WORKSPACE/dita/document.ditamap" \
+                 -o "$GITHUB_WORKSPACE/out/pdf" \
                  -f pdf \
                  --theme="$THEME" \
                  --org.dita.index.skip="yes" \
                  -Dpdf.formatter=fop \
                  -Dargs.fo.userconfig="$GITHUB_WORKSPACE/fop/fop.xconf" \
                  -Dclean.temp=no \
-                 -t "$GITHUB_WORKSPACE/out/pdf/temp" \
+                 -t "$TEMPDIR" \
                  --verbosity DEBUG \
-                 --logfile "$GITHUB_WORKSPACE/out/pdf/logs/dita.log"
+                 --logfile "$DITALOG" 2>&1 | tee -a "$RUNLOG"
+            set +x
 
-
-      - name: Debug FO for empty static-content
+      # 🔍 If the build failed, sweep both workspace temp AND /tmp for FO files; then analyze
+      - name: Collect FO from /tmp and workspace (on failure)
         if: failure()
         run: |
-          echo "=== Listing FO files in out/pdf/temp ==="
-          find out/pdf/temp -type f -name '*.fo' -print || true
-          echo
-          echo "=== Grep context around <fo:static-content> (10 lines of context) ==="
-          grep -R -n -C 10 "<fo:static-content" out/pdf/temp || true
+          set -euo pipefail
+          echo "=== Collecting FO files ==="
+          mkdir -p out/pdf/temp-sys out/pdf/logs
+          echo "Copying workspace FO (if any)..."
+          find out/pdf/temp -type f -name '*.fo' -print -exec cp -f {} out/pdf/temp-sys/ \; 2>/dev/null || true
+          echo "Copying system FO from /tmp (if any)..."
+          find /tmp -maxdepth 2 -type d -name 'temp*' -print | while read d; do
+            find "$d" -type f -name '*.fo' -print -exec cp -f {} out/pdf/temp-sys/ \; || true
+          done
+          echo "Available FO files:"
+          ls -l out/pdf/temp-sys || true
+          echo "Available logs:"
+          ls -l out/pdf/logs || true
+
+      - name: Debug FO for empty static-content (on failure)
+        if: failure()
+        run: |
+          echo "=== Scanning FO for <fo:static-content> ==="
+          for fo in $(find out/pdf/temp-sys -type f -name '*.fo'); do
+            echo "---- $fo ----"
+            grep -n "<fo:static-content" "$fo" || true
+          done
           echo
           echo "=== Heuristic: flag static-content blocks with no <fo:block> ==="
-          for fo in $(find out/pdf/temp -type f -name '*.fo'); do
+          for fo in $(find out/pdf/temp-sys -type f -name '*.fo'); do
             awk '
               /<fo:static-content/ { inSC=1; start=NR; hasBlock=0 }
               inSC && /<fo:block/ { hasBlock=1 }
@@ -95,25 +124,22 @@ jobs:
             ' "$fo" || true
           done
           echo
-          echo "=== Theme hints from DITA log (DEBUG) ==="
-          grep -E "theme|Theme|pdf theme|Applying" out/pdf/logs/dita.log || true
+          echo "=== Tail of runner log (console) ==="
+          tail -n 200 out/pdf/logs/runner.log || true
           echo
-          echo "=== Tail of DITA build log ==="
+          echo "=== Tail of DITA log (if present) ==="
           tail -n 200 out/pdf/logs/dita.log || true
 
-      - name: Upload FO temp (on failure)
+      - name: Upload FO & logs (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: fo-temp
-          path: out/pdf/temp/**
+          name: fo-and-logs
+          path: |
+            out/pdf/temp-sys/**
+            out/pdf/temp/**
+            out/pdf/logs/**
 
-      - name: Upload DITA logs (on failure)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: dita-logs
-          path: out/pdf/logs/**
 
 
       - name: Upload PDF 📚
