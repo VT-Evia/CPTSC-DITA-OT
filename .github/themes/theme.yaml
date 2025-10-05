@@ -1,4 +1,4 @@
-# Sample PDF theme (safe headers/footers everywhere)
+# Sample PDF theme (with safe header/footer content blocks)
 #
 # https://www.dita-ot.org/dev/topics/sample-pdf-theme.html
 
@@ -30,8 +30,7 @@ page:
   size: PA4
   mirror-margins: true
 
-# ↓ headers: guarantee non-empty content on ALL sequences ↓
-# We use '{mapTitle}' where possible; fall back to a single space " " to ensure a block exists.
+# ↓ HEADER — defaults + sequence-specific content (never empty) ↓
 header:
   color: $brand-color-secondary
   display-align: before
@@ -41,66 +40,42 @@ header:
   padding-before: 12pt
   start-indent: 10mm
 
-  # Default body/chapters
-  odd:
-    content: '{mapTitle}'
-    text-align: end
-  even:
-    content: '{mapTitle}'
-    text-align: start
+  # Default (body/chapters) — always non-empty
+  content:
+    odd: '{mapTitle}'
+    even: '{mapTitle}'
 
-  # Sequences that can be empty: use a single space to force a block if tokens resolve empty
+  # Sequences that can be empty — force a single space
   cover:
-    odd:
-      content: ' '
-      text-align: end
-    even:
-      content: ' '
-      text-align: start
+    content:
+      odd: ' '
+      even: ' '
   blank:
-    odd:
-      content: ' '
-      text-align: end
-    even:
-      content: ' '
-      text-align: start
+    content:
+      odd: ' '
+      even: ' '
   front-matter:
-    odd:
-      content: '{mapTitle}'
-      text-align: end
-    even:
-      content: '{mapTitle}'
-      text-align: start
+    content:
+      odd: ' '
+      even: ' '
   toc:
-    odd:
-      content: '{mapTitle}'
-      text-align: end
-    even:
-      content: '{mapTitle}'
-      text-align: start
+    content:
+      odd: '{mapTitle}'
+      even: '{mapTitle}'
   back-matter:
-    odd:
-      content: '{mapTitle}'
-      text-align: end
-    even:
-      content: '{mapTitle}'
-      text-align: start
+    content:
+      odd: '{mapTitle}'
+      even: '{mapTitle}'
   appendix:
-    odd:
-      content: '{mapTitle}'
-      text-align: end
-    even:
-      content: '{mapTitle}'
-      text-align: start
+    content:
+      odd: '{mapTitle}'
+      even: '{mapTitle}'
   index:
-    odd:
-      content: '{mapTitle}'
-      text-align: end
-    even:
-      content: '{mapTitle}'
-      text-align: start
+    content:
+      odd: '{mapTitle}'
+      even: '{mapTitle}'
 
-# ↓ footers: guarantee non-empty content on ALL sequences ↓
+# ↓ FOOTER — defaults + sequence-specific content (never empty) ↓
 footer:
   color: $brand-color-secondary
   end-indent: 10mm
@@ -109,65 +84,40 @@ footer:
   padding-before: 6pt
   start-indent: 10mm
 
-  odd:
-    content: '{folio}'
-    font-weight: bold
-    text-align: end
-  even:
-    content: '{folio}'
-    font-weight: bold
-    text-align: start
+  # Default (body/chapters)
+  content:
+    odd: '{folio}'
+    even: '{folio}'
 
-  # On sequences that might suppress folio, force a space so static-content is never empty
+  # Ensure sequences never emit empty static-content
   cover:
-    odd:
-      content: ' '
-      text-align: end
-    even:
-      content: ' '
-      text-align: start
+    content:
+      odd: ' '
+      even: ' '
   blank:
-    odd:
-      content: ' '
-      text-align: end
-    even:
-      content: ' '
-      text-align: start
+    content:
+      odd: ' '
+      even: ' '
   front-matter:
-    odd:
-      content: '{folio}'
-      text-align: end
-    even:
-      content: '{folio}'
-      text-align: start
+    content:
+      odd: ' '
+      even: ' '
   toc:
-    odd:
-      content: '{folio}'
-      text-align: end
-    even:
-      content: '{folio}'
-      text-align: start
+    content:
+      odd: '{folio}'
+      even: '{folio}'
   back-matter:
-    odd:
-      content: '{folio}'
-      text-align: end
-    even:
-      content: '{folio}'
-      text-align: start
+    content:
+      odd: '{folio}'
+      even: '{folio}'
   appendix:
-    odd:
-      content: '{folio}'
-      text-align: end
-    even:
-      content: '{folio}'
-      text-align: start
+    content:
+      odd: '{folio}'
+      even: '{folio}'
   index:
-    odd:
-      content: '{folio}'
-      text-align: end
-    even:
-      content: '{folio}'
-      text-align: start
+    content:
+      odd: '{folio}'
+      even: '{folio}'
 
 # ↓ styles ↓
 style:
@@ -188,6 +138,7 @@ style:
     space-after: 8pt
   codeph:
     color: $brand-color-secondary
+
   # cover page
   cover:
     background-image: alessandro-bianchi-_kdTyfnUFAc-unsplash.jpg
@@ -199,6 +150,7 @@ style:
     font-weight: bold
     line-height: 1.5
     space-before: 195mm
+
   example-title:
     color: $brand-color-secondary
   fig:
@@ -209,6 +161,7 @@ style:
       font-weight: normal
   filepath:
     color: $brand-color-secondary
+
   h1:
     border-after: solid 2pt $brand-color-inverse
     color: $brand-color-primary
@@ -236,11 +189,13 @@ style:
     font-size: 12pt
     font-style: italic
     space-before: 12pt
+
   li:
     label:
       color: $brand-color-secondary
   link:
     color: $brand-color-links
+
   note:
     background-color: $brand-color-note-background-info
     border: solid 1pt $brand-color-tertiary
@@ -268,6 +223,7 @@ style:
       background-color: $brand-color-note-background-tip
     warning:
       background-color: $brand-color-note-background-caution
+
   option:
     color: $brand-color-secondary
     font-family: $pdf2-font-monospaced
@@ -282,6 +238,7 @@ style:
     color: $brand-color-secondary
     font-size: 13pt
     line-height: 1.3
+
   table:
     caption:
       color: $brand-color-secondary
@@ -292,6 +249,7 @@ style:
     font-size: 9pt
     header:
       background-color: $brand-color-inverse
+
   toc-1:
     color: $brand-color-primary
     font-family: $pdf2-font-sans
@@ -308,6 +266,7 @@ style:
     color: black
     space-before: 2pt
     start-indent: 64pt
+
   varname:
     color: $brand-color-secondary
     font-family: $pdf2-font-monospaced
