@@ -60,7 +60,7 @@ jobs:
          plugins: |
           fox.jason.extend.css
           fox.jason.prismjs
-          ./plugins/edu.eviavt.pdfvars        # <-- install our local override
+          /plugins/edu.eviavt.pdfvars        # <-- install our local override
          build: |
           dita \
            --input=dita/document.ditamap \
