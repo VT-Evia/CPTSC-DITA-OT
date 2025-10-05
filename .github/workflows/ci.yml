@@ -49,17 +49,26 @@ jobs:
             fox.jason.prismjs
           build: |
             set -e
+            THEME="$GITHUB_WORKSPACE/.github/themes/theme.yaml"
+            echo "=== Theme path: $THEME ==="
+            test -f "$THEME" || (echo "Theme file not found!" && exit 1)
+            echo "=== Show header/footer section from theme ==="
+            awk 'f{print} /^(header:|footer:)/{f=1} /^style:/{exit}' "$THEME" || true
+
             mkdir -p "$GITHUB_WORKSPACE/out/pdf/temp" "$GITHUB_WORKSPACE/out/pdf/logs"
+
             dita -i dita/document.ditamap \
                  -o out/pdf \
                  -f pdf \
-                 --theme=.github/themes/theme.yaml \
+                 --theme="$THEME" \
                  --org.dita.index.skip="yes" \
                  -Dpdf.formatter=fop \
-                 -Dargs.fo.userconfig=$GITHUB_WORKSPACE/fop/fop.xconf \
+                 -Dargs.fo.userconfig="$GITHUB_WORKSPACE/fop/fop.xconf" \
                  -Dclean.temp=no \
                  -t "$GITHUB_WORKSPACE/out/pdf/temp" \
+                 --verbosity DEBUG \
                  --logfile "$GITHUB_WORKSPACE/out/pdf/logs/dita.log"
+
 
       # 🔍 FO diagnostics if the PDF build fails
       - name: Debug FO for empty static-content
