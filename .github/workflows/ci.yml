@@ -106,47 +106,7 @@ jobs:
         run: |
           sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE/out" || true
 
-      # 🔍 Diagnostics if PDF build failed
-      - name: Debug FO for empty static-content (on failure)
-        if: failure()
-        run: |
-          echo "=== Listing FO files in out/pdf/temp ==="
-          find out/pdf/temp -type f -name '*.fo' -print || true
-          echo
-          echo "=== Grep context around <fo:static-content> (10 lines) ==="
-          grep -R -n -C 10 "<fo:static-content" out/pdf/temp || true
-          echo
-          echo "=== Heuristic: flag static-content blocks with no <fo:block> ==="
-          for fo in $(find out/pdf/temp -type f -name '*.fo' 2>/dev/null); do
-            awk '
-              /<fo:static-content/ { inSC=1; start=NR; hasBlock=0 }
-              inSC && /<fo:block/ { hasBlock=1 }
-              inSC && /<\/fo:static-content>/ {
-                if (hasBlock==0) {
-                  printf("\n---- EMPTY static-content in %s lines %d-%d ----\n", FILENAME, start, NR);
-                  cmd = sprintf("sed -n \"%d,%dp\" \"%s\"", (start>5?start-5:1), NR+10, FILENAME);
-                  system(cmd);
-                }
-                inSC=0; hasBlock=0;
-              }
-            ' "$fo" || true
-          done
-          echo
-          echo "=== Tail of runner log (console) ==="
-          tail -n 200 out/pdf/logs/runner.log || true
-          echo
-          echo "=== Tail of DITA log (if present) ==="
-          tail -n 200 out/pdf/logs/dita.log || true
-
-      # 📦 Upload FO & logs when the build fails
-      - name: Upload FO & logs (on failure)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: fo-and-logs
-          path: |
-            out/pdf/temp/**
-            out/pdf/logs/**
+     
 
       # Upload PDF only on success
       - name: Upload PDF 📚
