@@ -1,9 +1,6 @@
-# Sample PDF theme (safe header/footer; frontmatter NBSP blocks)
-#
-# Works with com.elovirta.pdf (transtype "pdf") and ensures that
-# front matter headers/footers always produce a non-empty FO block.
+# PDF theme with safe headers/footers (front matter never empty)
 
-# ↓ brand colors ↓
+# ---- Brand colors ----
 brand:
   color:
     primary: '#861F41'
@@ -19,20 +16,22 @@ brand:
         tip: '#d1e7dd'
     xml-domain: '#639'
 
-# ↓ font stacks ↓
+# ---- Font stacks (variables reused in styles) ----
 pdf2:
   font:
     sans: 'Helvetica, Arial Unicode MS, Tahoma, Batang, SimSun'
     serif: 'Times New Roman, Times, Arial Unicode MS, Tahoma, Batang, SimSun'
     monospaced: 'Courier New, Courier, Arial Unicode MS, Tahoma, Batang, SimSun'
 
-# ↓ page settings ↓
+# ---- Page setup ----
 page:
   size: PA4
   mirror-margins: true
 
-# ---------- HEADER (never empty) ----------
+# ===================== HEADER =====================
+# Default content set to NBSP so FO always emits <fo:block>…
 header:
+  content: "\u00A0"          # <- default for all sequences (safety)
   color: $brand-color-secondary
   display-align: before
   end-indent: 10mm
@@ -41,15 +40,15 @@ header:
   padding-before: 12pt
   start-indent: 10mm
 
-  # Defaults (body/chapters) — always non-empty
+  # Duplex content for body pages
   odd:
-    content: '{mapTitle}'
+    content: '{title}'
     text-align: end
   even:
-    content: '{mapTitle}'
+    content: '{title}'
     text-align: start
 
-  # Sequences that can be empty: force NBSP so FO gets a <fo:block>
+  # Sequences that often have nothing — force NBSP explicitly
   cover:
     odd:
       content: "\u00A0"
@@ -64,8 +63,6 @@ header:
     even:
       content: "\u00A0"
       text-align: start
-
-  # Correct key in pdf theme: frontmatter (no hyphen)
   frontmatter:
     odd:
       content: "\u00A0"
@@ -73,7 +70,7 @@ header:
     even:
       content: "\u00A0"
       text-align: start
-  # Optional alias in case of alternate mapping (harmless if ignored)
+  # (Optional alias; harmless if ignored)
   front-matter:
     odd:
       content: "\u00A0"
@@ -82,49 +79,46 @@ header:
       content: "\u00A0"
       text-align: start
 
+  # Other sequences (keep real content)
   toc:
     odd:
-      content: '{mapTitle}'
+      content: '{title}'
       text-align: end
     even:
-      content: '{mapTitle}'
+      content: '{title}'
       text-align: start
-
-  # Correct key: backmatter (no hyphen)
   backmatter:
     odd:
-      content: '{mapTitle}'
+      content: '{title}'
       text-align: end
     even:
-      content: '{mapTitle}'
+      content: '{title}'
       text-align: start
-  # Optional alias
   back-matter:
     odd:
-      content: '{mapTitle}'
+      content: '{title}'
       text-align: end
     even:
-      content: '{mapTitle}'
+      content: '{title}'
       text-align: start
-
   appendix:
     odd:
-      content: '{mapTitle}'
+      content: '{title}'
       text-align: end
     even:
-      content: '{mapTitle}'
+      content: '{title}'
       text-align: start
-
   index:
     odd:
-      content: '{mapTitle}'
+      content: '{title}'
       text-align: end
     even:
-      content: '{mapTitle}'
+      content: '{title}'
       text-align: start
 
-# ---------- FOOTER (never empty) ----------
+# ===================== FOOTER =====================
 footer:
+  content: "\u00A0"          # <- default NBSP for safety
   color: $brand-color-secondary
   end-indent: 10mm
   font-family: $pdf2-font-sans
@@ -132,7 +126,7 @@ footer:
   padding-before: 6pt
   start-indent: 10mm
 
-  # Defaults (body/chapters)
+  # Duplex page numbers for body pages
   odd:
     content: '{folio}'
     font-weight: bold
@@ -142,6 +136,7 @@ footer:
     font-weight: bold
     text-align: start
 
+  # Sequences that often have nothing — force NBSP explicitly
   cover:
     odd:
       content: "\u00A0"
@@ -156,8 +151,6 @@ footer:
     even:
       content: "\u00A0"
       text-align: start
-
-  # frontmatter safety (NBSP so a block is emitted)
   frontmatter:
     odd:
       content: "\u00A0"
@@ -165,7 +158,6 @@ footer:
     even:
       content: "\u00A0"
       text-align: start
-  # optional alias
   front-matter:
     odd:
       content: "\u00A0"
@@ -174,6 +166,7 @@ footer:
       content: "\u00A0"
       text-align: start
 
+  # Other sequences with real content
   toc:
     odd:
       content: '{folio}'
@@ -181,7 +174,6 @@ footer:
     even:
       content: '{folio}'
       text-align: start
-
   backmatter:
     odd:
       content: '{folio}'
@@ -196,7 +188,6 @@ footer:
     even:
       content: '{folio}'
       text-align: start
-
   appendix:
     odd:
       content: '{folio}'
@@ -204,7 +195,6 @@ footer:
     even:
       content: '{folio}'
       text-align: start
-
   index:
     odd:
       content: '{folio}'
@@ -213,7 +203,7 @@ footer:
       content: '{folio}'
       text-align: start
 
-# ---------- STYLES ----------
+# ===================== STYLES =====================
 style:
   body:
     font-family: $pdf2-font-serif
@@ -236,12 +226,11 @@ style:
   codeph:
     color: $brand-color-secondary
 
-  # cover page
+  # Cover settings
   cover:
     background-image: alessandro-bianchi-_kdTyfnUFAc-unsplash.jpg
     background-repeat: no-repeat
     height: 25.7cm
-
   cover-title:
     color: $brand-color-primary
     font-size: 36pt
@@ -361,17 +350,14 @@ style:
     color: $brand-color-primary
     font-family: $pdf2-font-sans
     start-indent: 0
-
   toc-2:
     color: black
     space-before: 4pt
     start-indent: 20pt
-
   toc-3:
     color: black
     space-before: 2pt
     start-indent: 42pt
-
   toc-4:
     color: black
     space-before: 2pt
@@ -385,9 +371,7 @@ style:
 
   xmlatt:
     color: $brand-color-xml-domain
-
   xmlelement:
     color: $brand-color-xml-domain
-
   xmlnsname:
     color: $brand-color-xml-domain
