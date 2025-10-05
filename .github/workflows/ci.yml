@@ -11,6 +11,7 @@ jobs:
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
+
       - name: Build Bootstrap ⚙️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -27,15 +28,14 @@ jobs:
             fox.jason.favicon
             fox.jason.open-graph
           project: .github/dita-ot/html.xml
-          # If you have a DITAVal, add the following:
-          # -- build: | 
-            #  dita -i dita/document.ditamap -o out/html -f html5 --filter=myfilter.ditaval
+
       - name: Deploy HTML 🚀
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: out/html # The folder the action should deploy.
+          BRANCH: gh-pages
+          FOLDER: out/html
+
       - name: Build PDF 🖨️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -48,11 +48,53 @@ jobs:
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
-              dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes" --org.dita.index.skip=yes -Dpdf.formatter=fop -Dargs.fo.userconfig=$GITHUB_WORKSPACE/fop/fop.xconf -Dclean.temp=no
-         # If you have a DITAVal, replace the previous line with the following:
-            # dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes" --filter=myfilter.ditaval
+            dita -i dita/document.ditamap \
+                 -o out/pdf \
+                 -f pdf \
+                 --theme=.github/themes/theme.yaml \
+                 --org.dita.index.skip="yes" \
+                 -Dpdf.formatter=fop \
+                 -Dargs.fo.userconfig=$GITHUB_WORKSPACE/fop/fop.xconf \
+                 -Dclean.temp=no
+
+      # 🔍 DIAGNOSTIC: runs only if the PDF build failed. Shows context around static-content
+      - name: Debug FO for empty static-content
+        if: failure()
+        run: |
+          echo "=== Listing FO files in out/pdf/temp ==="
+          find out/pdf/temp -type f -name '*.fo' -print || true
+          echo
+          echo "=== Grep context around <fo:static-content> (10 lines of context) ==="
+          grep -R -n -C 10 "<fo:static-content" out/pdf/temp || true
+          echo
+          echo "=== Heuristic check for EMPTY static-content blocks ==="
+          # Walk each FO and report static-content sections that contain no <fo:block>
+          for fo in $(find out/pdf/temp -type f -name '*.fo'); do
+            awk '
+              /<fo:static-content/ { inSC=1; start=NR; hasBlock=0 }
+              inSC && /<fo:block/ { hasBlock=1 }
+              inSC && /<\/fo:static-content>/ {
+                if (hasBlock==0) {
+                  printf("\n---- EMPTY static-content in %s lines %d-%d ----\n", FILENAME, start, NR);
+                  cmd = sprintf("sed -n \"%d,%dp\" \"%s\"", (start>5?start-5:1), NR+10, FILENAME);
+                  system(cmd);
+                }
+                inSC=0; hasBlock=0;
+              }
+            ' "$fo" || true
+          done
+
+      # 📦 Upload temp FO for local inspection (only when the build fails)
+      - name: Upload FO temp (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fo-temp
+          path: out/pdf/temp/**
+
       - name: Upload PDF 📚
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: dita-pdf
-          path: 'out/pdf'
+          path: out/pdf
