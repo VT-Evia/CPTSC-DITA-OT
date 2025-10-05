@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plugin PUBLIC "-//DITA-OT//DTD plugin//EN" "plugin.dtd">
+<plugin id="edu.eviavt.pdfvars" version="1.0.0">
+  <!-- No features needed; variable overrides are picked up automatically -->
+  <info>
+    <name>Front matter header/footer non-breaking space</name>
+    <description>Ensures frontmatter headers/footers are never empty.</description>
+    <vendor>eviavt/vendor>
+  </info>
+</plugin>

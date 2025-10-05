@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vars xmlns="urn:oasis:names:tc:dita:xsl:stylesheet">
+  <!-- Front matter headers/footers (recto/verso) -->
+  <variable id="Front matter odd header"><text>&#160;</text></variable>
+  <variable id="Front matter even header"><text>&#160;</text></variable>
+  <variable id="Front matter odd footer"><text>&#160;</text></variable>
+  <variable id="Front matter even footer"><text>&#160;</text></variable>
+</vars>
