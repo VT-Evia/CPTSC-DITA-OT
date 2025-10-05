@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fop version="1.0">
+  <!-- Keep FOP strict so you catch issues early -->
+  <strict-configuration>true</strict-configuration>
+
+  <renderers>
+    <renderer mime="application/pdf">
+      <!-- Enable PDF tagging for accessibility -->
+      <accessibility>true</accessibility>
+
+      <!-- (Optional but recommended) Use a modern PDF version for better tagging support -->
+      <pdf-version>1.7</pdf-version>
+
+      <!-- (Optional) Compress output -->
+      <filterList>
+        <value>flate</value>
+      </filterList>
+
+      <!-- (Recommended) Ensure fonts are embedded and Unicode-capable -->
+      <fonts>
+        <!-- Auto-detect system fonts (works on many setups).
+             For reproducible builds, explicitly list project fonts instead. -->
+        <auto-detect/>
+
+        <!-- Example of explicitly embedded fonts (replace with your font files):
+        <font kerning="yes" embed-url="fonts/SourceSans3-Regular.ttf">
+          <font-triplet name="Source Sans 3" style="normal" weight="normal"/>
+        </font>
+        <font kerning="yes" embed-url="fonts/SourceSans3-Bold.ttf">
+          <font-triplet name="Source Sans 3" style="normal" weight="bold"/>
+        </font>
+        -->
+      </fonts>
+    </renderer>
+  </renderers>
+</fop>
