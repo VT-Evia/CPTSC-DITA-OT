@@ -1,9 +1,9 @@
 name: CI
 'on':
   push:
-    branches:
-      - master
+    branches: [ master ]
   workflow_dispatch:
+
 jobs:
   build-dita:
     name: Build DITA
@@ -11,6 +11,12 @@ jobs:
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
+
+      # Ensure we own out/ before any Docker step writes as root
+      - name: Prepare workspace dirs
+        run: |
+          mkdir -p out/html out/pdf
+          chmod -R 777 out || true
 
       - name: Build Bootstrap ⚙️
         uses: dita-ot/dita-ot-action@4.3
@@ -28,6 +34,12 @@ jobs:
             fox.jason.favicon
             fox.jason.open-graph
           project: .github/dita-ot/html.xml
+
+      # Fix any root-owned files created by the container
+      - name: Fix permissions (after HTML)
+        if: always()
+        run: |
+          sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE/out" || true
 
       - name: Deploy HTML 🚀
         uses: JamesIves/github-pages-deploy-action@3.7.1
@@ -48,26 +60,25 @@ jobs:
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
-            set -euo pipefail
+            # POSIX sh-safe flags (no pipefail)
+            set -eu
             THEME="$GITHUB_WORKSPACE/.github/themes/theme.yaml"
             LOGDIR="$GITHUB_WORKSPACE/out/pdf/logs"
             TEMPDIR="$GITHUB_WORKSPACE/out/pdf/temp"
             RUNLOG="$LOGDIR/runner.log"
             DITALOG="$LOGDIR/dita.log"
 
-            echo "=== Paths ==="
-            echo "THEME:   $THEME"
-            echo "LOGDIR:  $LOGDIR"
-            echo "TEMPDIR: $TEMPDIR"
+            echo "=== Paths ===" | tee -a "$RUNLOG"
+            echo "THEME:   $THEME" | tee -a "$RUNLOG"
+            echo "LOGDIR:  $LOGDIR" | tee -a "$RUNLOG"
+            echo "TEMPDIR: $TEMPDIR" | tee -a "$RUNLOG"
             mkdir -p "$LOGDIR" "$TEMPDIR"
-            test -f "$THEME" || (echo "Theme file not found at $THEME" | tee -a "$RUNLOG"; exit 1)
+            [ -f "$THEME" ] || { echo "Theme file not found at $THEME" | tee -a "$RUNLOG"; exit 1; }
 
             echo "=== Show header/footer section from theme ===" | tee -a "$RUNLOG"
             awk 'f{print} /^(header:|footer:)/{f=1} /^style:/{exit}' "$THEME" | tee -a "$RUNLOG" || true
 
-            echo "=== Running DITA-OT (DEBUG verbosity) ===" | tee -a "$RUNLOG"
-            # Use tee so we always capture console output even if --logfile isn't created
-            set -x
+            # Run DITA-OT with absolute paths, DEBUG verbosity, and workspace temp/logs
             dita -i "$GITHUB_WORKSPACE/dita/document.ditamap" \
                  -o "$GITHUB_WORKSPACE/out/pdf" \
                  -f pdf \
@@ -79,37 +90,25 @@ jobs:
                  -t "$TEMPDIR" \
                  --verbosity DEBUG \
                  --logfile "$DITALOG" 2>&1 | tee -a "$RUNLOG"
-            set +x
 
-      # 🔍 If the build failed, sweep both workspace temp AND /tmp for FO files; then analyze
-      - name: Collect FO from /tmp and workspace (on failure)
-        if: failure()
+      # Make sure host steps can write to out/ even if the container created root-owned files
+      - name: Fix permissions (after PDF)
+        if: always()
         run: |
-          set -euo pipefail
-          echo "=== Collecting FO files ==="
-          mkdir -p out/pdf/temp-sys out/pdf/logs
-          echo "Copying workspace FO (if any)..."
-          find out/pdf/temp -type f -name '*.fo' -print -exec cp -f {} out/pdf/temp-sys/ \; 2>/dev/null || true
-          echo "Copying system FO from /tmp (if any)..."
-          find /tmp -maxdepth 2 -type d -name 'temp*' -print | while read d; do
-            find "$d" -type f -name '*.fo' -print -exec cp -f {} out/pdf/temp-sys/ \; || true
-          done
-          echo "Available FO files:"
-          ls -l out/pdf/temp-sys || true
-          echo "Available logs:"
-          ls -l out/pdf/logs || true
+          sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE/out" || true
 
+      # 🔍 Diagnostics if PDF build failed
       - name: Debug FO for empty static-content (on failure)
         if: failure()
         run: |
-          echo "=== Scanning FO for <fo:static-content> ==="
-          for fo in $(find out/pdf/temp-sys -type f -name '*.fo'); do
-            echo "---- $fo ----"
-            grep -n "<fo:static-content" "$fo" || true
-          done
+          echo "=== Listing FO files in out/pdf/temp ==="
+          find out/pdf/temp -type f -name '*.fo' -print || true
+          echo
+          echo "=== Grep context around <fo:static-content> (10 lines) ==="
+          grep -R -n -C 10 "<fo:static-content" out/pdf/temp || true
           echo
           echo "=== Heuristic: flag static-content blocks with no <fo:block> ==="
-          for fo in $(find out/pdf/temp-sys -type f -name '*.fo'); do
+          for fo in $(find out/pdf/temp -type f -name '*.fo' 2>/dev/null); do
             awk '
               /<fo:static-content/ { inSC=1; start=NR; hasBlock=0 }
               inSC && /<fo:block/ { hasBlock=1 }
@@ -130,18 +129,17 @@ jobs:
           echo "=== Tail of DITA log (if present) ==="
           tail -n 200 out/pdf/logs/dita.log || true
 
+      # 📦 Upload FO & logs when the build fails
       - name: Upload FO & logs (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: fo-and-logs
           path: |
-            out/pdf/temp-sys/**
             out/pdf/temp/**
             out/pdf/logs/**
 
-
-
+      # Upload PDF only on success
       - name: Upload PDF 📚
         if: success()
         uses: actions/upload-artifact@v4
