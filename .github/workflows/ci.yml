@@ -90,6 +90,7 @@ jobs:
                  -Dpdf2.enableAccessibility=yes \
                  -Dargs.pdf.accessibility=yes \
                  -Dpdf.formatter=fop \
+                 -Dargs.fo.userconfig=.github/fo/fop-userconfig.xml
                  --org.dita.index.skip="yes"
           # Optional DITAVal example:
           # build: |
