@@ -33,15 +33,15 @@ jobs:
             fox.jason.open-graph
           project: .github/dita-ot/html.xml
           # If you have a DITAVal, add the following:
-          # -- build: | 
-          #     dita -i dita/document.ditamap -o out/html -f html5 --filter=myfilter.ditaval
+          # build: |
+          #   dita -i dita/document.ditamap -o out/html -f html5 --filter=myfilter.ditaval
 
       - name: Deploy HTML 🚀
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: out/html  # The folder the action should deploy.
+          BRANCH: gh-pages
+          FOLDER: out/html
 
       # ────────────────────────────────────────────────
       # 2️⃣ Build Styled PDF (non-tagged, with theme)
@@ -60,12 +60,12 @@ jobs:
           build: |
             dita -i dita/document.ditamap -o out/pdf -f pdf \
                  --theme=.github/themes/theme.yaml \
-                 --org.dita.index.skip="yes"
-          # If you have a DITAVal, replace the previous line with the following:
+                 -Dorg.dita.index.skip=yes
+          # Optional DITAVal example:
           # build: |
           #   dita -i dita/document.ditamap -o out/pdf -f pdf \
           #        --theme=.github/themes/theme.yaml \
-          #        --org.dita.index.skip="yes" \
+          #        -Dorg.dita.index.skip=yes \
           #        --filter=myfilter.ditaval
 
       - name: Upload PDF 📚
@@ -75,33 +75,26 @@ jobs:
           path: 'out/pdf'
 
       # ────────────────────────────────────────────────
-      # 3️⃣ Build Tagged PDF (no theme, accessibility enabled)
+      # 3️⃣ Build Tagged PDF (FOP best-effort, system fonts)
       # ────────────────────────────────────────────────
       - name: Build Tagged PDF (no theme) ♿
         uses: dita-ot/dita-ot-action@4.3
         with:
-          # Minimal plugin set — no styling applied
           plugins: |
             fox.jason.extend.css
           build: |
+            echo "Checking userconfig location..."
+            ls -la "$GITHUB_WORKSPACE/.github/fo" || true
+            test -f "$GITHUB_WORKSPACE/.github/fo/fop-userconfig.xml" || (echo "Missing .github/fo/fop-userconfig.xml" && exit 1)
             dita -i dita/document.ditamap \
                  -o out/pdf-tagged \
                  -f pdf \
+                 -Dpdf.formatter=fop \
                  -Dpdf2.enableAccessibility=yes \
                  -Dargs.pdf.accessibility=yes \
-                 -Dpdf.formatter=fop \
-                 -Dargs.fo.userconfig=$GITHUB_WORKSPACE/.github/fo/fop-userconfig.xml \     
-                 --org.dita.index.skip="yes"
-          # Optional DITAVal example:
-          # build: |
-          #   dita -i dita/document.ditamap \
-          #        -o out/pdf-tagged \
-          #        -f pdf \
-          #        -Dpdf2.enableAccessibility=yes \
-          #        -Dargs.pdf.accessibility=yes \
-          #        -Dpdf.formatter=fop \
-          #        --org.dita.index.skip="yes" \
-          #        --filter=myfilter.ditaval
+                 -Dargs.fo.userconfig=$GITHUB_WORKSPACE/.github/fo/fop-userconfig.xml \
+                 -Dargs.default.language=en-US \
+                 -Dorg.dita.index.skip=yes
 
       - name: Upload Tagged PDF ♿
         uses: actions/upload-artifact@v4
