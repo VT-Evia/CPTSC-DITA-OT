@@ -4,6 +4,7 @@ name: CI
     branches:
       - master
   workflow_dispatch:
+
 jobs:
   build-dita:
     name: Build DITA
@@ -12,6 +13,9 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v2
 
+      # ────────────────────────────────────────────────
+      # 1️⃣ Build Bootstrap HTML
+      # ────────────────────────────────────────────────
       - name: Build Bootstrap ⚙️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -39,6 +43,9 @@ jobs:
           BRANCH: gh-pages # The branch the action should deploy to.
           FOLDER: out/html  # The folder the action should deploy.
 
+      # ────────────────────────────────────────────────
+      # 2️⃣ Build Styled PDF (non-tagged, with theme)
+      # ────────────────────────────────────────────────
       - name: Build PDF 🖨️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -51,10 +58,15 @@ jobs:
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
-            dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes"
+            dita -i dita/document.ditamap -o out/pdf -f pdf \
+                 --theme=.github/themes/theme.yaml \
+                 --org.dita.index.skip="yes"
           # If you have a DITAVal, replace the previous line with the following:
           # build: |
-          #   dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes" --filter=myfilter.ditaval
+          #   dita -i dita/document.ditamap -o out/pdf -f pdf \
+          #        --theme=.github/themes/theme.yaml \
+          #        --org.dita.index.skip="yes" \
+          #        --filter=myfilter.ditaval
 
       - name: Upload PDF 📚
         uses: actions/upload-artifact@v4
@@ -62,4 +74,36 @@ jobs:
           name: dita-pdf
           path: 'out/pdf'
 
-    
+      # ────────────────────────────────────────────────
+      # 3️⃣ Build Tagged PDF (no theme, accessibility enabled)
+      # ────────────────────────────────────────────────
+      - name: Build Tagged PDF (no theme) ♿
+        uses: dita-ot/dita-ot-action@4.3
+        with:
+          # Minimal plugin set — no styling applied
+          plugins: |
+            fox.jason.extend.css
+          build: |
+            dita -i dita/document.ditamap \
+                 -o out/pdf-tagged \
+                 -f pdf \
+                 -Dpdf2.enableAccessibility=yes \
+                 -Dargs.pdf.accessibility=yes \
+                 -Dpdf.formatter=fop \
+                 --org.dita.index.skip="yes"
+          # Optional DITAVal example:
+          # build: |
+          #   dita -i dita/document.ditamap \
+          #        -o out/pdf-tagged \
+          #        -f pdf \
+          #        -Dpdf2.enableAccessibility=yes \
+          #        -Dargs.pdf.accessibility=yes \
+          #        -Dpdf.formatter=fop \
+          #        --org.dita.index.skip="yes" \
+          #        --filter=myfilter.ditaval
+
+      - name: Upload Tagged PDF ♿
+        uses: actions/upload-artifact@v4
+        with:
+          name: dita-pdf-tagged
+          path: 'out/pdf-tagged'
