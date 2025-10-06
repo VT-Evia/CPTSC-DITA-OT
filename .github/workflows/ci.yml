@@ -74,30 +74,4 @@ jobs:
           name: dita-pdf
           path: 'out/pdf'
 
-      # ────────────────────────────────────────────────
-      # 3️⃣ Build Tagged PDF (FOP best-effort, system fonts)
-      # ────────────────────────────────────────────────
-      - name: Build Tagged PDF (no theme) ♿
-        uses: dita-ot/dita-ot-action@4.3
-        with:
-          plugins: |
-            fox.jason.extend.css
-          build: |
-            echo "Checking userconfig location..."
-            ls -la "$GITHUB_WORKSPACE/.github/fo" || true
-            test -f "$GITHUB_WORKSPACE/.github/fo/fop-userconfig.xml" || (echo "Missing .github/fo/fop-userconfig.xml" && exit 1)
-            dita -i dita/document.ditamap \
-                 -o out/pdf-tagged \
-                 -f pdf \
-                 -Dpdf.formatter=fop \
-                 -Dpdf2.enableAccessibility=yes \
-                 -Dargs.pdf.accessibility=yes \
-                 -Dargs.fo.userconfig=$GITHUB_WORKSPACE/.github/fo/fop-userconfig.xml \
-                 -Dargs.default.language=en-US \
-                 -Dorg.dita.index.skip=yes
-
-      - name: Upload Tagged PDF ♿
-        uses: actions/upload-artifact@v4
-        with:
-          name: dita-pdf-tagged
-          path: 'out/pdf-tagged'
+    
