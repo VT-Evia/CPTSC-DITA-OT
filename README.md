@@ -1,11 +1,12 @@
 ﻿# 📘 CPTSC 2025 Structured Authoring Workshop Template
 
-Template repository for publishing **Bootstrap-themed HTML** and **PDF** outputs using [DITA-OT build GitHub Action](https://github.com/dita-ot/dita-ot-action).
+Template repository for publishing **Bootstrap-themed HTML** and **PDF** outputs using [DITA-OT build GitHub Action](https://github.com/dita-ot/dita-ot-action). Use this guide to upload a DITA project to a GitHub repository and, via DITA-OT GitHub Actions, access website and pdf deliverables. Edits to DITA files committed to the repository will invoke the DITA-OT automatically in a process of continuous integration and development to build and serve website and pdf deliverables.
 
 ---
 
 ## 🧭 Table of Contents
 
+- [Prerequisite](#-prerequisite)
 - [🚀 Getting Started](#-getting-started)
 - [🔑 Grant Workflow Permissions](#-grant-workflow-permissions)
 - [🧱 Project Layout & Requirements](#-project-layout--requirements)
@@ -19,13 +20,18 @@ Template repository for publishing **Bootstrap-themed HTML** and **PDF** outputs
 
 ---
 
+## Prerequisite
+
+You must be logged in to your personal account on GitHub to use this template (refer to [Creating an account on GitHub](https://docs.github.com/en/get-started/start-your-journey/creating-an-account-on-github) for instructions). 
+
+---
+
 ## 🚀 Getting Started
 
 1. Click **“Use this template”** at the top of this page.  
 2. Create your new repository from the template.  
    - ✅ **Select “Include all branches.”** You’ll need all branches provided by the template.
 
----
 
 ## 🔑 Grant Workflow Permissions
 
@@ -64,9 +70,11 @@ Put all of your DITA content inside the `dita` directory:
 **Requirements**
 
 - 📄 **Main map name**: The default workflow expects **`document.ditamap`**.  
-  - You *can* rename it, but then you must update the workflow where it references `document.ditamap` (open `.github/workflows/ci.yml` and search for that filename).
+  - Rename your DITA map **`document.ditamap`**.
+  - You *can* give it different name, but then you must update the workflow where it references `document.ditamap` (open `.github/workflows/ci.yml` and search for that filename).
 - 🏠 **Homepage**: `dita/index.dita` will serve as the site’s landing page.
-  - You need to reference your `index.dita` as the first topic reference in your `document.ditamap`. Otherwise, your deliverables will not have a home page or introduction.
+  - Create an index.dita generic or concept topic. Suggest doing this before putting your DITA content inside the dita directory. 
+  - Reference your `index.dita` as the first topic reference in your `document.ditamap`. Otherwise, your deliverables will not have a home page or introduction. Suggest doing this before putting your DITA content inside the dita directory. The index.dita topic might include overview or about information.
 - 📁 Keep topics, maps, and media under the `dita/` folder.
 
 ---
@@ -78,7 +86,15 @@ Put all of your DITA content inside the `dita` directory:
   - 🌐 **[Bootstrap](https://getbootstrap.com/)-themed HTML**
   - 📄 **PDF**
 
-### 📊 Monitor Workflow Runs
+## 🌐 Enable & View GitHub Pages
+
+1. **Settings → Pages**  
+2. **Source**: select **Deploy from a branch**  
+3. **Branch**: choose **`gh-pages`** and **`/ (root)`**, then **Save**  
+4. Your site will be available at:  
+`https://<your-username>.github.io/<your-repo>/`
+
+## 📊 Monitor Workflow Runs
 
 - Go to the **Actions** tab → open the most recent run.
 - ✅ **Green check** = success | ❌ **Red X** = failed  
@@ -89,17 +105,7 @@ Put all of your DITA content inside the `dita` directory:
 
 > ⏱️ Builds and page deployments can take a few minute to appear after a successful run.
 
----
-
-## 🌐 Enable & View GitHub Pages
-
-1. **Settings → Pages**  
-2. **Source**: select **Deploy from a branch**  
-3. **Branch**: choose **`gh-pages`** and **`/ (root)`**, then **Save**  
-4. Your site will be available at:  
-`https://<your-username>.github.io/<your-repo>/`
-
-### 📄 PDF Deliverable
+## 📄 PDF Deliverable
 
 The PDF output is not deployed directly to GitHub Pages.  
 Instead, each workflow run on the **Actions** page provides the PDF as a downloadable **artifact**:
@@ -108,6 +114,7 @@ Instead, each workflow run on the **Actions** page provides the PDF as a downloa
 2. Select the latest successful workflow run.  
 3. Scroll down to the **Artifacts** section.  
 4. Click the PDF artifact link to download your deliverable. 
+
 ---
 
 ## 🎨 Customize the Outputs
