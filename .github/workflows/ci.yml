@@ -74,4 +74,28 @@ jobs:
           name: dita-pdf
           path: 'out/pdf'
 
+      - name: Build Accessible PDF (PDF/UA via FOP)
+        uses: dita-ot/dita-ot-action@4.3
+        with:
+    # Optional: install some system fonts so FOP can embed them
+          install: |
+            apt-get update -q
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get install -qy --no-install-recommends \
+            fonts-dejavu fonts-liberation fonts-noto fonts-noto-cjk fonts-noto-color-emoji
+            fc-list | wc -l
+
+    # Point to your input map; adjust path/name as needed
+          input: dita/document.ditamap
+
+    # Classic FOP-based PDF transform
+          transtype: pdf2
+
+    # Make sure the FO userconfig is an ABSOLUTE path
+            args: |
+              -Dargs.fo.userconfig=${GITHUB_WORKSPACE}/.github/fo/fop-userconfig.xml
+
+    # Where to put the PDF
+          output-path: out/pdf-accessible
+
     

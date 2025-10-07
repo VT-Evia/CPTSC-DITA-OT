@@ -1,27 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <fop version="1.0">
-  <renderers>
-    <renderer mime="application/pdf">
-      <fonts>
-        <!-- 
-          Use system fonts instead of embedding local files.
-          The "base14" set (Times, Helvetica, Courier, Symbol, ZapfDingbats)
-          is always available in PDF renderers.
-          FOP will automatically resolve these to system equivalents.
-        -->
-        <auto-detect/>  <!-- tells FOP to use system-installed fonts -->
-      </fonts>
+  <!-- Let FOP discover the system fonts you installed above -->
+  <fonts>
+    <auto-detect/>
+  </fonts>
 
-      <!-- Accessibility & tagging options -->
-      <accessibility>true</accessibility>
+  <!-- Turn on tagging -->
+  <accessibility>true</accessibility>
 
-      <!-- Optional metadata for PDF/A or language defaults -->
-    
-      <pdf-a-mode value="PDF/A-2b"/>
-      <pdf-lang value="en-US"/>
-    
-      <!-- Recommended for cleaner Unicode output -->
-      <encoding-mode value="auto"/>
-    </renderer>
-  </renderers>
+  <!-- Ask FOP to produce PDF/UA-1 structure -->
+  <renderer mime="application/pdf">
+    <pdf-ua-mode>PDF/UA-1</pdf-ua-mode>
+  </renderer>
 </fop>
+
