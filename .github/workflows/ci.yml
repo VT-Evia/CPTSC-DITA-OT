@@ -13,9 +13,7 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v2
 
-      # ────────────────────────────────────────────────
-      # 1️⃣ Build Bootstrap HTML
-      # ────────────────────────────────────────────────
+      # 1) HTML
       - name: Build Bootstrap ⚙️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -32,9 +30,6 @@ jobs:
             fox.jason.favicon
             fox.jason.open-graph
           project: .github/dita-ot/html.xml
-          # If you have a DITAVal, add the following:
-          # build: |
-          #   dita -i dita/document.ditamap -o out/html -f html5 --filter=myfilter.ditaval
 
       - name: Deploy HTML 🚀
         uses: JamesIves/github-pages-deploy-action@3.7.1
@@ -43,9 +38,7 @@ jobs:
           BRANCH: gh-pages
           FOLDER: out/html
 
-      # ────────────────────────────────────────────────
-      # 2️⃣ Build Styled PDF (non-tagged, with theme)
-      # ────────────────────────────────────────────────
+      # 2) Styled PDF (non-tagged)
       - name: Build PDF 🖨️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -61,12 +54,6 @@ jobs:
             dita -i dita/document.ditamap -o out/pdf -f pdf \
                  --theme=.github/themes/theme.yaml \
                  -Dorg.dita.index.skip=yes
-          # Optional DITAVal example:
-          # build: |
-          #   dita -i dita/document.ditamap -o out/pdf -f pdf \
-          #        --theme=.github/themes/theme.yaml \
-          #        -Dorg.dita.index.skip=yes \
-          #        --filter=myfilter.ditaval
 
       - name: Upload PDF 📚
         uses: actions/upload-artifact@v4
@@ -74,32 +61,34 @@ jobs:
           name: dita-pdf
           path: out/pdf
 
-      # ────────────────────────────────────────────────
-      # 3️⃣ Build Accessible PDF (PDF/UA via FOP)
-      # ────────────────────────────────────────────────
+      # 3) Accessible PDF (FOP PDF/UA)
       - name: Build Accessible PDF (PDF/UA via FOP)
         uses: dita-ot/dita-ot-action@4.3
         with:
-          # Optional: install some system fonts so FOP can embed them
           install: |
             apt-get update -q
             export DEBIAN_FRONTEND=noninteractive
             apt-get install -qy --no-install-recommends \
+              fontconfig \
               fonts-dejavu fonts-liberation fonts-noto fonts-noto-cjk fonts-noto-color-emoji
-            fc-list | wc -l
+            echo "Fonts installed:"; fc-list | wc -l
+            echo "FOP userconfig exists?"; test -f "${GITHUB_WORKSPACE}/.github/fo/fop-userconfig.xml" && echo OK || (echo MISSING && exit 2)
 
-          # Point to your input map; adjust path/name as needed
           input: dita/document.ditamap
-
-          # Classic FOP-based PDF transform
           transtype: pdf2
-
-          # Make sure the FO userconfig is an ABSOLUTE path
           args: |
             -Dargs.fo.userconfig=${GITHUB_WORKSPACE}/.github/fo/fop-userconfig.xml
-
-          # Where to put the PDF
+            -Dpdf.formatter=fop
+            # Ensure language metadata is present if not in the map/topics
+            -Dargs.pdf.lang=en-US
+            # Prefer document title over file name in metadata
+            -Dpdf.pdfua.show-title=true
           output-path: out/pdf-accessible
+
+      - name: List outputs (debug)
+        run: |
+          echo "=== OUT TREE ==="
+          ls -R out || true
 
       - name: Upload Accessible PDF ♿
         uses: actions/upload-artifact@v4
