@@ -100,3 +100,9 @@ jobs:
 
           # Where to put the PDF
           output-path: out/pdf-accessible
+
+      - name: Upload Accessible PDF ♿
+        uses: actions/upload-artifact@v4
+        with:
+          name: dita-pdf-accessible
+          path: out/pdf-accessible
