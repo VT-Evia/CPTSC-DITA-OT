@@ -16,11 +16,10 @@
       <accessibility>true</accessibility>
 
       <!-- Optional metadata for PDF/A or language defaults -->
-      <!--
+    
       <pdf-a-mode value="PDF/A-2b"/>
       <pdf-lang value="en-US"/>
-      -->
-
+    
       <!-- Recommended for cleaner Unicode output -->
       <encoding-mode value="auto"/>
     </renderer>
