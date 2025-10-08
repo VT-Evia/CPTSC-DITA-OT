@@ -6,7 +6,7 @@ Template repository for publishing **Bootstrap-themed HTML** and **PDF** outputs
 
 ## 🧭 Table of Contents
 
-- [Prerequisite](#-prerequisite)
+- [🧩 Prerequisite](#-prerequisite)
 - [🚀 Getting Started](#-getting-started)
 - [🔑 Grant Workflow Permissions](#-grant-workflow-permissions)
 - [🧱 Project Layout & Requirements](#-project-layout--requirements)
@@ -20,7 +20,7 @@ Template repository for publishing **Bootstrap-themed HTML** and **PDF** outputs
 
 ---
 
-## Prerequisite
+## 🧩 Prerequisite
 
 You must be logged in to your personal account on GitHub to use this template (refer to [Creating an account on GitHub](https://docs.github.com/en/get-started/start-your-journey/creating-an-account-on-github) for instructions). 
 
