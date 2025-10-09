@@ -60,23 +60,3 @@ jobs:
         with:
           name: dita-pdf
           path: out/pdf
-
-      # 3) Tagged PDF (FOP + your fop.xconf)
-      - name: Build Tagged PDF ♿
-        uses: dita-ot/dita-ot-action@4.3
-        with:
-          # No extra plugins required; uses default org.dita.pdf2 with FOP
-          build: |
-            dita \
-              -i dita/document.ditamap \
-              -o out/pdf-tagged \
-              -f pdf \
-              --default.language=en \
-              -Dpdf.formatter=fop \
-              --args.fo.userconfig="${{ github.workspace }}/.github/fo/fop.xconf"
-
-      - name: Upload Tagged PDF ♿
-        uses: actions/upload-artifact@v4
-        with:
-          name: dita-pdf-tagged
-          path: out/pdf-tagged/**/*.pdf
