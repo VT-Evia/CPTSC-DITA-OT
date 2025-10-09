@@ -1,377 +1,82 @@
-# PDF theme with safe headers/footers (front matter never empty)
+name: CI
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
 
-# ---- Brand colors ----
-brand:
-  color:
-    primary: '#861F41'
-    secondary: '#E5751F'
-    tertiary: '#75787b'
-    inverse: '#FFFFFF'
-    links: '#3563ab'
-    note:
-      background:
-        attention: '#fff3cd'
-        caution: '#f8d7da'
-        info: '#dce4f0'
-        tip: '#d1e7dd'
-    xml-domain: '#639'
+jobs:
+  build-dita:
+    name: Build DITA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v2
 
-# ---- Font stacks (variables reused in styles) ----
-pdf2:
-  font:
-    sans: 'Helvetica, Arial Unicode MS, Tahoma, Batang, SimSun'
-    serif: 'Times New Roman, Times, Arial Unicode MS, Tahoma, Batang, SimSun'
-    monospaced: 'Courier New, Courier, Arial Unicode MS, Tahoma, Batang, SimSun'
+      # 1) HTML
+      - name: Build Bootstrap ⚙️
+        uses: dita-ot/dita-ot-action@4.3
+        with:
+          install: |
+            apt-get update -q
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get install -qy --no-install-recommends nodejs
+            nodejs -v
+          plugins: |
+            fox.jason.extend.css
+            net.infotexture.dita-bootstrap
+            net.infotexture.dita-bootstrap.lunr
+            fox.jason.prismjs
+            fox.jason.favicon
+            fox.jason.open-graph
+          project: .github/dita-ot/html.xml
 
-# ---- Page setup ----
-page:
-  size: PA4
-  mirror-margins: true
+      - name: Deploy HTML 🚀
+        uses: JamesIves/github-pages-deploy-action@3.7.1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: out/html
 
-# ===================== HEADER =====================
-# Default content set to NBSP so FO always emits <fo:block>…
-header:
-  content: "\u00A0"          # <- default for all sequences (safety)
-  color: $brand-color-secondary
-  display-align: before
-  end-indent: 10mm
-  font-family: $pdf2-font-sans
-  padding-after: 6pt
-  padding-before: 12pt
-  start-indent: 10mm
+      # 2) Styled PDF (non-tagged)
+      - name: Build PDF 🖨️
+        uses: dita-ot/dita-ot-action@4.3
+        with:
+          install: |
+            apt-get update -q
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get install -qy --no-install-recommends nodejs
+            nodejs -v
+          plugins: |
+            fox.jason.extend.css
+            fox.jason.prismjs
+          build: |
+            dita -i dita/document.ditamap -o out/pdf -f pdf \
+                 --theme=.github/themes/theme.yaml \
+                 -Dorg.dita.index.skip=yes
 
-  # Duplex content for body pages
-  odd:
-    content: '{title}'
-    text-align: end
-  even:
-    content: '{title}'
-    text-align: start
+      - name: Upload PDF 📚
+        uses: actions/upload-artifact@v4
+        with:
+          name: dita-pdf
+          path: out/pdf
 
-  # Sequences that often have nothing — force NBSP explicitly
-  cover:
-    odd:
-      content: "\u00A0"
-      text-align: end
-    even:
-      content: "\u00A0"
-      text-align: start
-  blank:
-    odd:
-      content: "\u00A0"
-      text-align: end
-    even:
-      content: "\u00A0"
-      text-align: start
-  frontmatter:
-    odd:
-      content: "\u00A0"
-      text-align: end
-    even:
-      content: "\u00A0"
-      text-align: start
-  # (Optional alias; harmless if ignored)
-  front-matter:
-    odd:
-      content: "\u00A0"
-      text-align: end
-    even:
-      content: "\u00A0"
-      text-align: start
+      # 3) Tagged PDF (FOP + your fop.xconf)
+      - name: Build Tagged PDF ♿
+        uses: dita-ot/dita-ot-action@4.3
+        with:
+          # No extra plugins required; uses default org.dita.pdf2 with FOP
+          build: |
+            dita \
+              -i dita/document.ditamap \
+              -o out/pdf-tagged \
+              -f pdf \
+              --default.language=en \
+              -Dpdf.formatter=fop \
+              --args.fo.userconfig="${{ github.workspace }}/.github/fo/fop.xconf"
 
-  # Other sequences (keep real content)
-  toc:
-    odd:
-      content: '{title}'
-      text-align: end
-    even:
-      content: '{title}'
-      text-align: start
-  backmatter:
-    odd:
-      content: '{title}'
-      text-align: end
-    even:
-      content: '{title}'
-      text-align: start
-  back-matter:
-    odd:
-      content: '{title}'
-      text-align: end
-    even:
-      content: '{title}'
-      text-align: start
-  appendix:
-    odd:
-      content: '{title}'
-      text-align: end
-    even:
-      content: '{title}'
-      text-align: start
-  index:
-    odd:
-      content: '{title}'
-      text-align: end
-    even:
-      content: '{title}'
-      text-align: start
-
-# ===================== FOOTER =====================
-footer:
-  content: "\u00A0"          # <- default NBSP for safety
-  color: $brand-color-secondary
-  end-indent: 10mm
-  font-family: $pdf2-font-sans
-  padding-after: 12pt
-  padding-before: 6pt
-  start-indent: 10mm
-
-  # Duplex page numbers for body pages
-  odd:
-    content: '{folio}'
-    font-weight: bold
-    text-align: end
-  even:
-    content: '{folio}'
-    font-weight: bold
-    text-align: start
-
-  # Sequences that often have nothing — force NBSP explicitly
-  cover:
-    odd:
-      content: "\u00A0"
-      text-align: end
-    even:
-      content: "\u00A0"
-      text-align: start
-  blank:
-    odd:
-      content: "\u00A0"
-      text-align: end
-    even:
-      content: "\u00A0"
-      text-align: start
-  frontmatter:
-    odd:
-      content: "\u00A0"
-      text-align: end
-    even:
-      content: "\u00A0"
-      text-align: start
-  front-matter:
-    odd:
-      content: "\u00A0"
-      text-align: end
-    even:
-      content: "\u00A0"
-      text-align: start
-
-  # Other sequences with real content
-  toc:
-    odd:
-      content: '{folio}'
-      text-align: end
-    even:
-      content: '{folio}'
-      text-align: start
-  backmatter:
-    odd:
-      content: '{folio}'
-      text-align: end
-    even:
-      content: '{folio}'
-      text-align: start
-  back-matter:
-    odd:
-      content: '{folio}'
-      text-align: end
-    even:
-      content: '{folio}'
-      text-align: start
-  appendix:
-    odd:
-      content: '{folio}'
-      text-align: end
-    even:
-      content: '{folio}'
-      text-align: start
-  index:
-    odd:
-      content: '{folio}'
-      text-align: end
-    even:
-      content: '{folio}'
-      text-align: start
-
-# ===================== STYLES =====================
-style:
-  body:
-    font-family: $pdf2-font-serif
-    font-size: 11pt
-    line-height: 1.3
-    start-indent: 50pt
-
-  cmdname:
-    color: $brand-color-primary
-    font-weight: bold
-
-  codeblock:
-    background-color: $brand-color-inverse
-    border: solid 1pt $brand-color-tertiary
-    font-family: $pdf2-font-monospaced
-    font-size: 8pt
-    keep-together.within-page: always
-    space-after: 8pt
-
-  codeph:
-    color: $brand-color-secondary
-
-  # Cover settings
-  cover:
-    background-image: alessandro-bianchi-_kdTyfnUFAc-unsplash.jpg
-    background-repeat: no-repeat
-    height: 25.7cm
-  cover-title:
-    color: $brand-color-primary
-    font-size: 36pt
-    font-weight: bold
-    line-height: 1.5
-    space-before: 195mm
-
-  example-title:
-    color: $brand-color-secondary
-
-  fig:
-    caption:
-      color: $brand-color-secondary
-      font-size: 9pt
-      font-style: italic
-      font-weight: normal
-
-  filepath:
-    color: $brand-color-secondary
-
-  h1:
-    border-after: solid 2pt $brand-color-inverse
-    color: $brand-color-primary
-    font-size: 18pt
-    space-before: 0pt
-    padding-top: 0pt
-    space-after: 9pt
-    font-weight: bold
-    title-numbering: true
-
-  h2:
-    border-after: solid 1pt $brand-color-inverse
-    color: $brand-color-primary
-    font-size: 16pt
-    font-style: italic
-    space-before: 16pt
-    space-after: 8pt
-    title-numbering: true
-
-  h3:
-    color: $brand-color-primary
-    font-size: 14pt
-    font-weight: bold
-    space-before: 21pt
-    space-after: 7pt
-
-  h4:
-    font-size: 12pt
-    font-style: italic
-    space-before: 12pt
-
-  li:
-    label:
-      color: $brand-color-secondary
-
-  link:
-    color: $brand-color-links
-
-  note:
-    background-color: $brand-color-note-background-info
-    border: solid 1pt $brand-color-tertiary
-    keep-together.within-page: always
-    label:
-      font-family: $pdf2-font-sans
-      space-end: 2pt
-    padding-start: 6pt
-    start-indent: '6pt + from-parent(start-indent)'
-    padding-end: 6pt
-    end-indent: '6pt + from-parent(end-indent)'
-    space-before: 6pt
-    space-after: 12pt
-    attention:
-      background-color: $brand-color-note-background-attention
-    caution:
-      background-color: $brand-color-note-background-caution
-    important:
-      background-color: $brand-color-note-background-attention
-    notice:
-      background-color: $brand-color-note-background-attention
-    restriction:
-      background-color: $brand-color-note-background-attention
-    tip:
-      background-color: $brand-color-note-background-tip
-    warning:
-      background-color: $brand-color-note-background-caution
-
-  option:
-    color: $brand-color-secondary
-    font-family: $pdf2-font-monospaced
-    font-weight: bold
-
-  parmname:
-    color: $brand-color-primary
-    font-family: $pdf2-font-monospaced
-    font-weight: bold
-
-  section-title:
-    color: $brand-color-secondary
-
-  shortdesc:
-    color: $brand-color-secondary
-    font-size: 13pt
-    line-height: 1.3
-
-  table:
-    caption:
-      color: $brand-color-secondary
-      font-size: 9pt
-      font-style: italic
-      font-weight: normal
-    font-family: $pdf2-font-sans
-    font-size: 9pt
-    header:
-      background-color: $brand-color-inverse
-
-  toc-1:
-    color: $brand-color-primary
-    font-family: $pdf2-font-sans
-    start-indent: 0
-  toc-2:
-    color: black
-    space-before: 4pt
-    start-indent: 20pt
-  toc-3:
-    color: black
-    space-before: 2pt
-    start-indent: 42pt
-  toc-4:
-    color: black
-    space-before: 2pt
-    start-indent: 64pt
-
-  varname:
-    color: $brand-color-secondary
-    font-family: $pdf2-font-monospaced
-    font-style: italic
-    font-weight: bold
-
-  xmlatt:
-    color: $brand-color-xml-domain
-  xmlelement:
-    color: $brand-color-xml-domain
-  xmlnsname:
-    color: $brand-color-xml-domain
+      - name: Upload Tagged PDF ♿
+        uses: actions/upload-artifact@v4
+        with:
+          name: dita-pdf-tagged
+          path: out/pdf-tagged/**/*.pdf
