@@ -1,10 +1,9 @@
 name: CI
-on:
+'on':
   push:
     branches:
       - master
   workflow_dispatch:
-
 jobs:
   build-dita:
     name: Build DITA
@@ -12,8 +11,6 @@ jobs:
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
-
-      # 1) HTML
       - name: Build Bootstrap ⚙️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -30,15 +27,15 @@ jobs:
             fox.jason.favicon
             fox.jason.open-graph
           project: .github/dita-ot/html.xml
-
+          # If you have a DITAVal, add the following:
+          # -- build: | 
+            #  dita -i dita/document.ditamap -o out/html -f html5 --filter=myfilter.ditaval
       - name: Deploy HTML 🚀
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages
-          FOLDER: out/html
-
-      # 2) Styled PDF (non-tagged)
+          BRANCH: gh-pages # The branch the action should deploy to.
+          FOLDER: out/html # The folder the action should deploy.
       - name: Build PDF 🖨️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -51,12 +48,11 @@ jobs:
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
-            dita -i dita/document.ditamap -o out/pdf -f pdf \
-                 --theme=.github/themes/theme.yaml \
-                 -Dorg.dita.index.skip=yes
-
+              dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes"
+         # If you have a DITAVal, replace the previous line with the following:
+            # dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes" --filter=myfilter.ditaval
       - name: Upload PDF 📚
         uses: actions/upload-artifact@v4
         with:
           name: dita-pdf
-          path: out/pdf
+          path: 'out/pdf'
