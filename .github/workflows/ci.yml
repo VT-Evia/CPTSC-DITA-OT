@@ -111,20 +111,43 @@ jobs:
           </fop>
           XML
 
-      - name: Write minimal custom XSL (adds H1/H2 roles)
+      - name: Write custom PDF/UA XSL (roles + non-empty header/footer)
         run: |
-          cat > .github/pdfua/attrs.xsl <<'XSL'
+          cat > .github/pdfua/pdfua.xsl <<'XSL'
           <?xml version="1.0" encoding="UTF-8"?>
-          <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0">
+          <xsl:stylesheet
+              xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+              xmlns:fo="http://www.w3.org/1999/XSL/Format"
+              version="2.0">
+            <!-- Import base pdf2 FO -->
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/topic2fo.xsl"/>
 
+            <!-- Add roles for headings -->
             <xsl:attribute-set name="topic.title" use-attribute-sets="__topic.title">
               <xsl:attribute name="role">H1</xsl:attribute>
             </xsl:attribute-set>
-
             <xsl:attribute-set name="section.title" use-attribute-sets="__section.title">
               <xsl:attribute name="role">H2</xsl:attribute>
             </xsl:attribute-set>
+
+            <!-- Ensure static-content is never empty -->
+            <xsl:template name="insertHeader">
+              <xsl:param name="pageclass"/>
+              <xsl:param name="sequence"/>
+              <xsl:param name="position"/>
+              <xsl:param name="gentext-key"/>
+              <!-- Emit a minimal artifact block to satisfy FOP -->
+              <fo:block role="artifact"/>
+            </xsl:template>
+
+            <xsl:template name="insertFooter">
+              <xsl:param name="pageclass"/>
+              <xsl:param name="sequence"/>
+              <xsl:param name="position"/>
+              <xsl:param name="gentext-key"/>
+              <!-- Emit a minimal artifact block to satisfy FOP -->
+              <fo:block role="artifact"/>
+            </xsl:template>
           </xsl:stylesheet>
           XSL
 
@@ -140,7 +163,7 @@ jobs:
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
-            XSL="$(pwd)/.github/pdfua/attrs.xsl"
+            XSL="$(pwd)/.github/pdfua/pdfua.xsl"
             FOPCONF="$(pwd)/.github/fo/fop.xconf"
             THEME="$(pwd)/.github/themes/theme.yaml"
             MAP="$(pwd)/dita/document.ditamap"
