@@ -1,58 +1,91 @@
-name: CI
-'on':
+name: Build & Publish
+
+on:
   push:
-    branches:
-      - master
-  workflow_dispatch:
+    branches: [main, gh-pages]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
-  build-dita:
-    name: Build DITA
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Git checkout
-        uses: actions/checkout@v2
-      - name: Build Bootstrap ⚙️
-        uses: dita-ot/dita-ot-action@4.3
+      - name: Checkout repository
+        uses: actions/checkout@v3
         with:
-          install: |
-            apt-get update -q
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get install -qy --no-install-recommends nodejs
-            nodejs -v
-          plugins: |
-            fox.jason.extend.css
-            net.infotexture.dita-bootstrap
-            net.infotexture.dita-bootstrap.lunr
-            fox.jason.prismjs
-            fox.jason.favicon
-            fox.jason.open-graph
-          project: .github/dita-ot/html.xml
-          # If you have a DITAVal, add the following:
-          # -- build: | 
-            #  dita -i dita/document.ditamap -o out/html -f html5 --filter=myfilter.ditaval
-      - name: Deploy HTML 🚀
-        uses: JamesIves/github-pages-deploy-action@3.7.1
+          fetch-depth: 0
+
+      # Build Bootstrap HTML and standard PDF using DITA-OT
+      - name: Build HTML & Standard PDF
+        uses: dita-ot/dita-ot-action@master
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: out/html # The folder the action should deploy.
-      - name: Build PDF 🖨️
-        uses: dita-ot/dita-ot-action@4.3
+          input: dita/document.ditamap
+          transtype: html5-bootstrap
+          output-dir: out
+
+      - name: Build standard PDF with pdf2
+        uses: dita-ot/dita-ot-action@master
         with:
-          install: |
-            apt-get update -q
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get install -qy --no-install-recommends nodejs
-            nodejs -v
-          plugins: |
-            fox.jason.extend.css
-            fox.jason.prismjs
-          build: |
-              dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes"
-         # If you have a DITAVal, replace the previous line with the following:
-            # dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes" --filter=myfilter.ditaval
-      - name: Upload PDF 📚
-        uses: actions/upload-artifact@v4
+          input: dita/document.ditamap
+          transtype: pdf2
+          output-dir: out
+
+      # Build accessible/tagged PDF with FOP and accessibility enabled
+      - name: Build Accessible Tagged PDF with FOP
+        uses: dita-ot/dita-ot-action@master
         with:
-          name: dita-pdf
-          path: 'out/pdf'
+          input: dita/document.ditamap
+          transtype: pdf2
+          output-dir: out
+          args: >
+            --param:pdf.formatter=fop
+            --param:args.rellinks=nofamily
+            --param:pdf.accessibility=yes
+            --param:output.name=document-accessible
+
+      # Configure PDF output naming
+      - name: Organize PDF artifacts
+        run: |
+          mkdir -p out/artifacts
+          if [ -f "out/document.pdf" ]; then
+            mv out/document.pdf out/artifacts/document-standard.pdf
+          fi
+          if [ -f "out/document-accessible.pdf" ]; then
+            mv out/document-accessible.pdf out/artifacts/document-accessible.pdf
+          fi
+
+      # Deploy HTML to GitHub Pages
+      - name: Upload HTML to Pages
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: out/
+
+      # Upload all PDFs as build artifacts
+      - name: Upload PDF artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: PDF-Deliverables
+          path: |
+            out/artifacts/document-standard.pdf
+            out/artifacts/document-accessible.pdf
+          retention-days: 30
+
+  deploy:
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
