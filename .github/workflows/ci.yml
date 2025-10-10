@@ -76,6 +76,8 @@ jobs:
         run: |
           mkdir -p .github/fo
           mkdir -p .github/pdfua
+          mkdir -p out/pdf-ua
+          mkdir -p out/tmp-ua
 
       - name: Install dependencies (Node.js + fonts)
         run: |
@@ -101,7 +103,7 @@ jobs:
           </fop>
           XML
 
-      - name: Write custom PDF/UA XSL (roles + non-empty static-content)
+      - name: Write custom PDF/UA XSL (roles + robust static-content guards)
         run: |
           cat > .github/pdfua/pdfua.xsl <<'XSL'
           <?xml version="1.0" encoding="UTF-8"?>
@@ -113,7 +115,7 @@ jobs:
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/topic2fo.xsl"/>
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/static-content.xsl"/>
 
-            <!-- Headings: help Acrobat recognize structure -->
+            <!-- Headings to improve tagging -->
             <xsl:attribute-set name="topic.title" use-attribute-sets="__topic.title">
               <xsl:attribute name="role">H1</xsl:attribute>
             </xsl:attribute-set>
@@ -121,38 +123,49 @@ jobs:
               <xsl:attribute name="role">H2</xsl:attribute>
             </xsl:attribute-set>
 
-            <!-- Guarantee non-empty BODY headers/footers -->
-            <xsl:template name="insertBodyOddHeader">
-              <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
-            </xsl:template>
-            <xsl:template name="insertBodyEvenHeader">
-              <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
-            </xsl:template>
-            <xsl:template name="insertBodyOddFooter">
-              <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
-            </xsl:template>
-            <xsl:template name="insertBodyEvenFooter">
+            <!-- ====== STATIC-CONTENT SAFETY NETS ====== -->
+            <!-- Generic helper -->
+            <xsl:template name="__ua.ensureNonEmpty">
               <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
             </xsl:template>
 
-            <!-- (Optional) Uncomment if your bookmap uses these sequences
-            <xsl:template name="insertFrontMatterOddHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
-            <xsl:template name="insertFrontMatterEvenHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
-            <xsl:template name="insertFrontMatterOddFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
-            <xsl:template name="insertFrontMatterEvenFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
-            <xsl:template name="insertTocOddHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
-            <xsl:template name="insertTocEvenHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
-            <xsl:template name="insertTocOddFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
-            <xsl:template name="insertTocEvenFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
-            <xsl:template name="insertIndexOddHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
-            <xsl:template name="insertIndexEvenHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
-            <xsl:template name="insertIndexOddFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
-            <xsl:template name="insertIndexEvenFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
-            -->
+            <!-- Body sequences -->
+            <xsl:template name="insertBodyOddHeader"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertBodyEvenHeader"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertBodyOddFooter"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertBodyEvenFooter"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+
+            <!-- TOC sequences -->
+            <xsl:template name="insertTocOddHeader"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertTocEvenHeader"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertTocOddFooter"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertTocEvenFooter"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+
+            <!-- Index sequences -->
+            <xsl:template name="insertIndexOddHeader"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertIndexEvenHeader"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertIndexOddFooter"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertIndexEvenFooter"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+
+            <!-- Front matter sequences -->
+            <xsl:template name="insertFrontMatterOddHeader"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertFrontMatterEvenHeader"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertFrontMatterOddFooter"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertFrontMatterEvenFooter"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+
+            <!-- Back matter sequences -->
+            <xsl:template name="insertBackMatterOddHeader"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertBackMatterEvenHeader"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertBackMatterOddFooter"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertBackMatterEvenFooter"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+
+            <!-- Generic fallback if your pdf2 calls this wrapper -->
+            <xsl:template name="insertHeader"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
+            <xsl:template name="insertFooter"><xsl:call-template name="__ua.ensureNonEmpty"/></xsl:template>
           </xsl:stylesheet>
           XSL
 
-      - name: Build Tagged PDF (FOP/UA)
+      - name: Build Tagged PDF (FOP/UA) + keep temp FO
         uses: dita-ot/dita-ot-action@4.3
         with:
           install: |
@@ -169,21 +182,33 @@ jobs:
             THEME="$(pwd)/.github/themes/theme.yaml"
             MAP="$(pwd)/dita/document.ditamap"
             OUT="$(pwd)/out/pdf-ua"
+            TMP="$(pwd)/out/tmp-ua"
 
             echo "Using XSL: $XSL"
             echo "Using FOP config: $FOPCONF"
+            echo "Temp dir: $TMP"
 
             dita -i "$MAP" \
                  -o "$OUT" \
                  -f pdf \
                  --theme="$THEME" \
+                 --temp="$TMP" \
+                 --clean.temp=no \
                  --args.fo.userconfig="$FOPCONF" \
                  --args.xsl.pdf="$XSL" \
                  --org.dita.index.skip="yes" \
                  --pdf.formatter=fop
 
       - name: Upload Tagged PDF 🧩
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dita-pdf-ua
           path: 'out/pdf-ua'
+
+      - name: Upload FO temp for debugging 🧪
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ua-temp-fo
+          path: 'out/tmp-ua'
