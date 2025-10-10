@@ -4,6 +4,7 @@ name: CI
     branches:
       - master
   workflow_dispatch:
+
 jobs:
   build-dita:
     name: Build DITA
@@ -11,6 +12,10 @@ jobs:
     steps:
       - name: Git checkout
         uses: actions/checkout@v2
+
+      # ────────────────────────────────────────────────
+      # 1️⃣ Build Bootstrap HTML
+      # ────────────────────────────────────────────────
       - name: Build Bootstrap ⚙️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -29,13 +34,21 @@ jobs:
           project: .github/dita-ot/html.xml
           # If you have a DITAVal, add the following:
           # -- build: | 
-            #  dita -i dita/document.ditamap -o out/html -f html5 --filter=myfilter.ditaval
+          #    dita -i dita/document.ditamap -o out/html -f html5 --filter=myfilter.ditaval
+
+      # ────────────────────────────────────────────────
+      # 2️⃣ Deploy HTML to GitHub Pages
+      # ────────────────────────────────────────────────
       - name: Deploy HTML 🚀
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages # The branch the action should deploy to.
-          FOLDER: out/html # The folder the action should deploy.
+          BRANCH: gh-pages
+          FOLDER: out/html
+
+      # ────────────────────────────────────────────────
+      # 3️⃣ Build Standard PDF
+      # ────────────────────────────────────────────────
       - name: Build PDF 🖨️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -48,11 +61,107 @@ jobs:
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
-              dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes"
-         # If you have a DITAVal, replace the previous line with the following:
-            # dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes" --filter=myfilter.ditaval
+            dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes"
+          # If you have a DITAVal, replace the previous line with:
+          # dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes" --filter=myfilter.ditaval
+
+      # ────────────────────────────────────────────────
+      # 4️⃣ Upload Standard PDF
+      # ────────────────────────────────────────────────
       - name: Upload PDF 📚
         uses: actions/upload-artifact@v4
         with:
           name: dita-pdf
           path: 'out/pdf'
+
+  # ─────────────────────────────────────────────────────
+  # 5️⃣ Build Tagged PDF (PDF/UA Accessible Version)
+  # ─────────────────────────────────────────────────────
+  build-tagged-pdf:
+    name: Build Tagged PDF (PDF/UA) 🏷️
+    runs-on: ubuntu-latest
+    needs: build-dita   # run after the first job finishes
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+
+      - name: Create folders
+        run: |
+          mkdir -p .github/fo
+          mkdir -p plugins/com.example.pdfua/xsl
+
+      - name: Install system fonts (Noto/DejaVu)
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -qy --no-install-recommends \
+            fonts-noto-core fonts-noto-mono fonts-dejavu-core
+
+      - name: Write FOP config (PDF/UA + auto font embedding)
+        run: |
+          cat > .github/fo/fop.xconf <<'XML'
+          <fop version="1.0">
+            <!-- Enable structure tree for tagging -->
+            <accessibility>true</accessibility>
+            <renderers>
+              <renderer mime="application/pdf">
+                <!-- Enable PDF/UA tagging -->
+                <pdf-ua-mode>PDF/UA-1</pdf-ua-mode>
+                <fonts>
+                  <!-- Auto-detect system fonts -->
+                  <auto-detect/>
+                </fonts>
+                <!-- Optional PDF/A archival mode
+                <pdf-a-mode>PDF/A-2u</pdf-a-mode>
+                -->
+              </renderer>
+            </renderers>
+          </fop>
+          XML
+
+      - name: Add minimal role-tagging plugin (H1/H2)
+        run: |
+          cat > plugins/com.example.pdfua/plugin.xml <<'XML'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <plugin id="com.example.pdfua"
+                  xmlns="http://dita-ot.sourceforge.net">
+            <require plugin="org.dita.pdf2"/>
+            <feature extension="org.dita.pdf2.xsl.fo">
+              <param name="xsl" value="xsl/attrs.xsl"/>
+            </feature>
+          </plugin>
+          XML
+
+          cat > plugins/com.example.pdfua/xsl/attrs.xsl <<'XSL'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0">
+            <xsl:import href="cfg/fo/attrs/attr-set-ref.xsl"/>
+            <xsl:attribute-set name="topic.title" use-attribute-sets="__topic.title">
+              <xsl:attribute name="role">H1</xsl:attribute>
+            </xsl:attribute-set>
+            <xsl:attribute-set name="section.title" use-attribute-sets="__section.title">
+              <xsl:attribute name="role">H2</xsl:attribute>
+            </xsl:attribute-set>
+          </xsl:stylesheet>
+          XSL
+
+      - name: Build Tagged PDF (FOP/UA)
+        uses: dita-ot/dita-ot-action@4.3
+        with:
+          plugins: |
+            fox.jason.extend.css
+            fox.jason.prismjs
+            ./plugins/com.example.pdfua
+          build: |
+            dita -i dita/document.ditamap \
+                 -o out/pdf-ua \
+                 -f pdf \
+                 --theme=.github/themes/theme.yaml \
+                 --args.fo.userconfig=.github/fo/fop.xconf \
+                 --org.dita.index.skip="yes" \
+                 --pdf.formatter=fop
+
+      - name: Upload Tagged PDF 🧩
+        uses: actions/upload-artifact@v4
+        with:
+          name: dita-pdf-ua
+          path: 'out/pdf-ua'
