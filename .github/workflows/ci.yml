@@ -13,7 +13,7 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v2
 
-      # 1️⃣ Build Bootstrap HTML
+      # 1) Build Bootstrap HTML
       - name: Build Bootstrap ⚙️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -31,7 +31,7 @@ jobs:
             fox.jason.open-graph
           project: .github/dita-ot/html.xml
 
-      # 2️⃣ Deploy HTML
+      # 2) Deploy HTML
       - name: Deploy HTML 🚀
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
@@ -39,7 +39,7 @@ jobs:
           BRANCH: gh-pages
           FOLDER: out/html
 
-      # 3️⃣ Build regular PDF (non-UA)
+      # 3) Build regular PDF (non-UA)
       - name: Build PDF 🖨️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -62,7 +62,7 @@ jobs:
           name: dita-pdf
           path: 'out/pdf'
 
-  # 4️⃣ Build Tagged PDF (PDF/UA)
+  # 4) Build Tagged PDF (PDF/UA)
   build-tagged-pdf:
     name: Build Tagged PDF (PDF/UA) 🏷️
     runs-on: ubuntu-latest
@@ -85,7 +85,7 @@ jobs:
           sudo apt-get install -qy --no-install-recommends fonts-dejavu-core
           ls -1 /usr/share/fonts/truetype/dejavu | sed -n '1,50p' || true
 
-      - name: Write FOP config (PDF/UA + embed DejaVu + alias Times/Helvetica/Courier)
+      - name: Write FOP config (embed DejaVu, PDF/UA)
         run: |
           cat > .github/fo/fop.xconf <<'XML'
           <fop version="1.0">
@@ -95,76 +95,48 @@ jobs:
               <renderer mime="application/pdf">
                 <pdf-ua-mode>PDF/UA-1</pdf-ua-mode>
                 <fonts>
-                  <!-- ===== SERIF: DejaVu Serif <= Times* ===== -->
+                  <!-- Serif -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf" kerning="yes">
                     <font-triplet name="DejaVu Serif" style="normal" weight="normal"/>
-                    <font-triplet name="Times" style="normal" weight="normal"/>
-                    <font-triplet name="Times-Roman" style="normal" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf" kerning="yes">
                     <font-triplet name="DejaVu Serif" style="normal" weight="bold"/>
-                    <font-triplet name="Times" style="normal" weight="bold"/>
-                    <!-- literal PDF-style family -->
-                    <font-triplet name="Times-Bold" style="normal" weight="bold"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf" kerning="yes">
                     <font-triplet name="DejaVu Serif" style="italic" weight="normal"/>
-                    <font-triplet name="Times" style="italic" weight="normal"/>
-                    <font-triplet name="Times-Italic" style="italic" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif-BoldItalic.ttf" kerning="yes">
                     <font-triplet name="DejaVu Serif" style="italic" weight="bold"/>
-                    <font-triplet name="Times" style="italic" weight="bold"/>
-                    <font-triplet name="Times-BoldItalic" style="italic" weight="bold"/>
                   </font>
-
-                  <!-- ===== SANS: DejaVu Sans <= Helvetica* ===== -->
+                  <!-- Sans -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans" style="normal" weight="normal"/>
-                    <font-triplet name="Helvetica" style="normal" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans" style="normal" weight="bold"/>
-                    <font-triplet name="Helvetica" style="normal" weight="bold"/>
-                    <font-triplet name="Helvetica-Bold" style="normal" weight="bold"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans" style="italic" weight="normal"/>
-                    <font-triplet name="Helvetica" style="italic" weight="normal"/>
-                    <font-triplet name="Helvetica" style="oblique" weight="normal"/>
-                    <!-- literal PDF-style family (seen in logs) -->
-                    <font-triplet name="Helvetica-Oblique" style="normal" weight="normal"/>
-                    <font-triplet name="Helvetica-Oblique" style="italic" weight="normal"/>
-                    <font-triplet name="Helvetica-Oblique" style="oblique" weight="normal"/>
+                    <font-triplet name="DejaVu Sans" style="oblique" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans" style="italic" weight="bold"/>
-                    <font-triplet name="Helvetica" style="italic" weight="bold"/>
-                    <font-triplet name="Helvetica" style="oblique" weight="bold"/>
-                    <font-triplet name="Helvetica-BoldOblique" style="normal" weight="bold"/>
-                    <font-triplet name="Helvetica-BoldOblique" style="italic" weight="bold"/>
-                    <font-triplet name="Helvetica-BoldOblique" style="oblique" weight="bold"/>
+                    <font-triplet name="DejaVu Sans" style="oblique" weight="bold"/>
                   </font>
-
-                  <!-- ===== MONO: DejaVu Sans Mono <= Courier* ===== -->
+                  <!-- Mono -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans Mono" style="normal" weight="normal"/>
-                    <font-triplet name="Courier" style="normal" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans Mono" style="normal" weight="bold"/>
-                    <font-triplet name="Courier" style="normal" weight="bold"/>
-                    <font-triplet name="Courier-Bold" style="normal" weight="bold"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Oblique.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans Mono" style="italic" weight="normal"/>
-                    <font-triplet name="Courier" style="italic" weight="normal"/>
-                    <font-triplet name="Courier-Oblique" style="normal" weight="normal"/>
+                    <font-triplet name="DejaVu Sans Mono" style="oblique" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-BoldOblique.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans Mono" style="italic" weight="bold"/>
-                    <font-triplet name="Courier" style="italic" weight="bold"/>
-                    <font-triplet name="Courier-BoldOblique" style="normal" weight="bold"/>
+                    <font-triplet name="DejaVu Sans Mono" style="oblique" weight="bold"/>
                   </font>
                 </fonts>
               </renderer>
@@ -182,7 +154,6 @@ jobs:
               version="2.0">
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/topic2fo.xsl"/>
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/static-content.xsl"/>
-
             <!-- Improve tagging -->
             <xsl:attribute-set name="topic.title" use-attribute-sets="__topic.title">
               <xsl:attribute name="role">H1</xsl:attribute>
@@ -190,7 +161,6 @@ jobs:
             <xsl:attribute-set name="section.title" use-attribute-sets="__section.title">
               <xsl:attribute name="role">H2</xsl:attribute>
             </xsl:attribute-set>
-
             <!-- Ensure front matter static-content isn't empty -->
             <xsl:template name="insertFrontmatterOddHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
             <xsl:template name="insertFrontmatterEvenHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
@@ -199,7 +169,7 @@ jobs:
           </xsl:stylesheet>
           XSL
 
-      - name: Build Tagged PDF (PDF/UA)  ✅ Node installed **inside** the action
+      - name: Build Tagged PDF (PDF/UA) — force DejaVu families via pdf2 params
         uses: dita-ot/dita-ot-action@4.3
         with:
           install: |
@@ -230,6 +200,10 @@ jobs:
                  --clean.temp=no \
                  --args.fo.userconfig="$FOPCONF" \
                  --args.xsl.pdf="$XSL" \
+                 --args.default.font.family="DejaVu Sans" \
+                 --args.default.sans.font.family="DejaVu Sans" \
+                 --args.default.serif.font.family="DejaVu Serif" \
+                 --args.default.monospace.font.family="DejaVu Sans Mono" \
                  --org.dita.index.skip="yes" \
                  --pdf.formatter=fop
 
