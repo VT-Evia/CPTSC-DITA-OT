@@ -86,26 +86,132 @@ jobs:
           sudo apt-get install -qy --no-install-recommends nodejs \
             fonts-noto-core fonts-noto-mono fonts-dejavu-core
           nodejs -v
+          # helpful: list a couple of Noto files so we know paths exist
+          ls -1 /usr/share/fonts/truetype/noto | head -n 20 || true
 
-      - name: Write FOP config (PDF/UA + auto font embedding + soft validation)
+      - name: Write FOP config (PDF/UA + embedded fonts + substitutions)
         run: |
           cat > .github/fo/fop.xconf <<'XML'
           <fop version="1.0">
-            <!-- So empty/odd edge cases become warnings, not hard errors -->
             <strict-validation>false</strict-validation>
             <accessibility>true</accessibility>
             <renderers>
               <renderer mime="application/pdf">
                 <pdf-ua-mode>PDF/UA-1</pdf-ua-mode>
                 <fonts>
+                  <!-- Explicit embedded fonts -->
+                  <!-- Noto Serif (Regular/Bold/Italic/BoldItalic) -->
+                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSerif-Regular.ttf" kerning="yes">
+                    <font-triplet name="Noto Serif" style="normal" weight="normal"/>
+                  </font>
+                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSerif-Bold.ttf" kerning="yes">
+                    <font-triplet name="Noto Serif" style="normal" weight="bold"/>
+                  </font>
+                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSerif-Italic.ttf" kerning="yes">
+                    <font-triplet name="Noto Serif" style="italic" weight="normal"/>
+                  </font>
+                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSerif-BoldItalic.ttf" kerning="yes">
+                    <font-triplet name="Noto Serif" style="italic" weight="bold"/>
+                  </font>
+
+                  <!-- Noto Sans (Regular/Bold/Italic/BoldItalic) -->
+                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf" kerning="yes">
+                    <font-triplet name="Noto Sans" style="normal" weight="normal"/>
+                  </font>
+                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf" kerning="yes">
+                    <font-triplet name="Noto Sans" style="normal" weight="bold"/>
+                  </font>
+                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSans-Italic.ttf" kerning="yes">
+                    <font-triplet name="Noto Sans" style="italic" weight="normal"/>
+                  </font>
+                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSans-BoldItalic.ttf" kerning="yes">
+                    <font-triplet name="Noto Sans" style="italic" weight="bold"/>
+                  </font>
+
+                  <!-- DejaVu Sans Mono for code -->
+                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf" kerning="yes">
+                    <font-triplet name="DejaVu Sans Mono" style="normal" weight="normal"/>
+                  </font>
+                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf" kerning="yes">
+                    <font-triplet name="DejaVu Sans Mono" style="normal" weight="bold"/>
+                  </font>
+                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Oblique.ttf" kerning="yes">
+                    <font-triplet name="DejaVu Sans Mono" style="italic" weight="normal"/>
+                  </font>
+                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-BoldOblique.ttf" kerning="yes">
+                    <font-triplet name="DejaVu Sans Mono" style="italic" weight="bold"/>
+                  </font>
+
+                  <!-- Also scan system fonts just in case -->
                   <auto-detect/>
+
+                  <!-- Map any base-14 calls to embedded families -->
+                  <substitutions>
+                    <!-- Times family -> Noto Serif -->
+                    <substitution>
+                      <from><font family="Times"/></from>
+                      <to><font family="Noto Serif"/></to>
+                    </substitution>
+                    <substitution>
+                      <from><font family="Times-Roman"/></from>
+                      <to><font family="Noto Serif"/></to>
+                    </substitution>
+                    <substitution>
+                      <from><font family="Times-Bold"/></from>
+                      <to><font family="Noto Serif"/></to>
+                    </substitution>
+                    <substitution>
+                      <from><font family="Times-Italic"/></from>
+                      <to><font family="Noto Serif"/></to>
+                    </substitution>
+                    <substitution>
+                      <from><font family="Times-BoldItalic"/></from>
+                      <to><font family="Noto Serif"/></to>
+                    </substitution>
+
+                    <!-- Helvetica -> Noto Sans -->
+                    <substitution>
+                      <from><font family="Helvetica"/></from>
+                      <to><font family="Noto Sans"/></to>
+                    </substitution>
+                    <substitution>
+                      <from><font family="Helvetica-Bold"/></from>
+                      <to><font family="Noto Sans"/></to>
+                    </substitution>
+                    <substitution>
+                      <from><font family="Helvetica-Oblique"/></from>
+                      <to><font family="Noto Sans"/></to>
+                    </substitution>
+                    <substitution>
+                      <from><font family="Helvetica-BoldOblique"/></from>
+                      <to><font family="Noto Sans"/></to>
+                    </substitution>
+
+                    <!-- Courier -> DejaVu Sans Mono -->
+                    <substitution>
+                      <from><font family="Courier"/></from>
+                      <to><font family="DejaVu Sans Mono"/></to>
+                    </substitution>
+                    <substitution>
+                      <from><font family="Courier-Bold"/></from>
+                      <to><font family="DejaVu Sans Mono"/></to>
+                    </substitution>
+                    <substitution>
+                      <from><font family="Courier-Oblique"/></from>
+                      <to><font family="DejaVu Sans Mono"/></to>
+                    </substitution>
+                    <substitution>
+                      <from><font family="Courier-BoldOblique"/></from>
+                      <to><font family="DejaVu Sans Mono"/></to>
+                    </substitution>
+                  </substitutions>
                 </fonts>
               </renderer>
             </renderers>
           </fop>
           XML
 
-      - name: Write custom PDF/UA XSL (roles + guaranteed non-empty frontmatter)
+      - name: Write custom PDF/UA XSL (roles + frontmatter guards)
         run: |
           cat > .github/pdfua/pdfua.xsl <<'XSL'
           <?xml version="1.0" encoding="UTF-8"?>
@@ -113,11 +219,10 @@ jobs:
               xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
               xmlns:fo="http://www.w3.org/1999/XSL/Format"
               version="2.0">
-            <!-- Import base pdf2 FO and static-content logic -->
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/topic2fo.xsl"/>
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/static-content.xsl"/>
 
-            <!-- Add H1/H2 roles -->
+            <!-- Improve tagging -->
             <xsl:attribute-set name="topic.title" use-attribute-sets="__topic.title">
               <xsl:attribute name="role">H1</xsl:attribute>
             </xsl:attribute-set>
@@ -125,44 +230,11 @@ jobs:
               <xsl:attribute name="role">H2</xsl:attribute>
             </xsl:attribute-set>
 
-            <!-- ====== Belt & suspenders: explicit frontmatter hooks ====== -->
-            <xsl:template name="insertFrontmatterOddHeader">
-              <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
-            </xsl:template>
-            <xsl:template name="insertFrontmatterEvenHeader">
-              <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
-            </xsl:template>
-            <xsl:template name="insertFrontmatterOddFooter">
-              <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
-            </xsl:template>
-            <xsl:template name="insertFrontmatterEvenFooter">
-              <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
-            </xsl:template>
-
-            <!-- ====== Generic catch-all for any static content ======
-                 In many pdf2 versions, this named template is called to emit
-                 header/footer blocks. If the pageclass is frontmatter,
-                 always output a minimal artifact block. -->
-            <xsl:template name="insertStaticContent">
-              <xsl:param name="pageclass"/>
-              <xsl:param name="sequence"/>
-              <xsl:param name="position"/>
-              <xsl:param name="gentext-key"/>
-              <xsl:choose>
-                <xsl:when test="lower-case($pageclass) = 'frontmatter'">
-                  <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
-                </xsl:when>
-                <xsl:otherwise>
-                  <!-- Defer to any imported implementation if not frontmatter -->
-                  <xsl:call-template name="insertStaticContent">
-                    <xsl:with-param name="pageclass" select="$pageclass"/>
-                    <xsl:with-param name="sequence"  select="$sequence"/>
-                    <xsl:with-param name="position"  select="$position"/>
-                    <xsl:with-param name="gentext-key" select="$gentext-key"/>
-                  </xsl:call-template>
-                </xsl:otherwise>
-              </xsl:choose>
-            </xsl:template>
+            <!-- Ensure frontmatter static-content is not empty -->
+            <xsl:template name="insertFrontmatterOddHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            <xsl:template name="insertFrontmatterEvenHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            <xsl:template name="insertFrontmatterOddFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            <xsl:template name="insertFrontmatterEvenFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
           </xsl:stylesheet>
           XSL
 
