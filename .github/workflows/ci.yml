@@ -169,10 +169,10 @@ jobs:
           </xsl:stylesheet>
           XSL
 
-      - name: Write theme overlay to force DejaVu families (single-string extends)
+      - name: Write theme overlay to force DejaVu families (correct extends path)
         run: |
           cat > .github/pdfua/theme-fonts.yaml <<'YAML'
-          extends: ".github/themes/theme.yaml"
+          extends: "../themes/theme.yaml"
           params:
             serif-font-family: "DejaVu Serif"
             sans-font-family: "DejaVu Sans"
