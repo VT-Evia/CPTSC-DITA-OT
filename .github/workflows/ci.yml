@@ -87,11 +87,13 @@ jobs:
           mkdir -p .github/fo
           mkdir -p .github/pdfua
 
-      - name: Install system fonts (Noto/DejaVu)
+      - name: Install dependencies (Node.js + Fonts)
         run: |
           sudo apt-get update -q
-          sudo apt-get install -qy --no-install-recommends \
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get install -qy --no-install-recommends nodejs \
             fonts-noto-core fonts-noto-mono fonts-dejavu-core
+          nodejs -v
 
       - name: Write FOP config (PDF/UA + auto font embedding)
         run: |
@@ -129,6 +131,11 @@ jobs:
       - name: Build Tagged PDF (FOP/UA)
         uses: dita-ot/dita-ot-action@4.3
         with:
+          install: |
+            apt-get update -q
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get install -qy --no-install-recommends nodejs
+            nodejs -v
           plugins: |
             fox.jason.extend.css
             fox.jason.prismjs
