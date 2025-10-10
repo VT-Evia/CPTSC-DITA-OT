@@ -13,7 +13,7 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v2
 
-      # 1) Build Bootstrap HTML
+      # 1️⃣ Build Bootstrap HTML
       - name: Build Bootstrap ⚙️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -31,7 +31,7 @@ jobs:
             fox.jason.open-graph
           project: .github/dita-ot/html.xml
 
-      # 2) Deploy HTML
+      # 2️⃣ Deploy HTML
       - name: Deploy HTML 🚀
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
@@ -39,7 +39,7 @@ jobs:
           BRANCH: gh-pages
           FOLDER: out/html
 
-      # 3) Build standard PDF
+      # 3️⃣ Build Regular PDF
       - name: Build PDF 🖨️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -56,14 +56,14 @@ jobs:
                  --theme=.github/themes/theme.yaml \
                  --org.dita.index.skip="yes"
 
-      # 4) Upload standard PDF
+      # 4️⃣ Upload Regular PDF
       - name: Upload PDF 📚
         uses: actions/upload-artifact@v4
         with:
           name: dita-pdf
           path: 'out/pdf'
 
-  # 5) Build Tagged PDF (PDF/UA)
+  # 5️⃣ Build Tagged PDF (PDF/UA)
   build-tagged-pdf:
     name: Build Tagged PDF (PDF/UA) 🏷️
     runs-on: ubuntu-latest
@@ -79,17 +79,14 @@ jobs:
           mkdir -p out/pdf-ua
           mkdir -p out/tmp-ua
 
-      - name: Install dependencies (Node.js + DejaVu fonts)
+      - name: Install Node.js and fonts
         run: |
           sudo apt-get update -q
           export DEBIAN_FRONTEND=noninteractive
-          sudo apt-get install -qy --no-install-recommends nodejs \
-            fonts-dejavu-core
+          sudo apt-get install -qy --no-install-recommends nodejs fonts-dejavu-core
           nodejs -v
-          # sanity: list the DejaVu files we’ll reference
-          ls -1 /usr/share/fonts/truetype/dejavu | sed -n '1,50p' || true
 
-      - name: Write FOP config (PDF/UA + embedded DejaVu + robust aliases)
+      - name: Write FOP config (DejaVu + Helvetica-Oblique families)
         run: |
           cat > .github/fo/fop.xconf <<'XML'
           <fop version="1.0">
@@ -99,79 +96,49 @@ jobs:
               <renderer mime="application/pdf">
                 <pdf-ua-mode>PDF/UA-1</pdf-ua-mode>
                 <fonts>
-                  <!-- ===== Embed DejaVu Serif and alias Times* to it ===== -->
+                  <!-- Serif family -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf" kerning="yes">
-                    <font-triplet name="DejaVu Serif" style="normal" weight="normal"/>
                     <font-triplet name="Times" style="normal" weight="normal"/>
                     <font-triplet name="Times-Roman" style="normal" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf" kerning="yes">
-                    <font-triplet name="DejaVu Serif" style="normal" weight="bold"/>
                     <font-triplet name="Times" style="normal" weight="bold"/>
                     <font-triplet name="Times-Bold" style="normal" weight="bold"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf" kerning="yes">
-                    <font-triplet name="DejaVu Serif" style="italic" weight="normal"/>
-                    <font-triplet name="Times" style="italic" weight="normal"/>
                     <font-triplet name="Times-Italic" style="italic" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif-BoldItalic.ttf" kerning="yes">
-                    <font-triplet name="DejaVu Serif" style="italic" weight="bold"/>
-                    <font-triplet name="Times" style="italic" weight="bold"/>
                     <font-triplet name="Times-BoldItalic" style="italic" weight="bold"/>
                   </font>
 
-                  <!-- ===== Embed DejaVu Sans and alias Helvetica* to it ===== -->
-                  <!-- Normal -->
+                  <!-- Sans family -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf" kerning="yes">
-                    <font-triplet name="DejaVu Sans" style="normal" weight="normal"/>
                     <font-triplet name="Helvetica" style="normal" weight="normal"/>
                   </font>
-                  <!-- Bold -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" kerning="yes">
-                    <font-triplet name="DejaVu Sans" style="normal" weight="bold"/>
-                    <font-triplet name="Helvetica" style="normal" weight="bold"/>
                     <font-triplet name="Helvetica-Bold" style="normal" weight="bold"/>
                   </font>
-                  <!-- Italic/Oblique -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf" kerning="yes">
-                    <font-triplet name="DejaVu Sans" style="italic" weight="normal"/>
-                    <font-triplet name="Helvetica" style="italic" weight="normal"/>
-                    <!-- Handle PDF-style family literal with style=italic -->
-                    <font-triplet name="Helvetica-Oblique" style="italic" weight="normal"/>
-                    <!-- And handle it if style is treated as 'normal' (some generators do this) -->
                     <font-triplet name="Helvetica-Oblique" style="normal" weight="normal"/>
+                    <font-triplet name="Helvetica" style="oblique" weight="normal"/>
                   </font>
-                  <!-- BoldItalic/BoldOblique -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf" kerning="yes">
-                    <font-triplet name="DejaVu Sans" style="italic" weight="bold"/>
-                    <font-triplet name="Helvetica" style="italic" weight="bold"/>
-                    <font-triplet name="Helvetica-BoldOblique" style="italic" weight="bold"/>
-                    <!-- Also guard for 'normal' style on PDF-style family -->
                     <font-triplet name="Helvetica-BoldOblique" style="normal" weight="bold"/>
+                    <font-triplet name="Helvetica" style="oblique" weight="bold"/>
                   </font>
 
-                  <!-- ===== Embed DejaVu Sans Mono and alias Courier* to it ===== -->
+                  <!-- Mono family -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf" kerning="yes">
-                    <font-triplet name="DejaVu Sans Mono" style="normal" weight="normal"/>
                     <font-triplet name="Courier" style="normal" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf" kerning="yes">
-                    <font-triplet name="DejaVu Sans Mono" style="normal" weight="bold"/>
-                    <font-triplet name="Courier" style="normal" weight="bold"/>
                     <font-triplet name="Courier-Bold" style="normal" weight="bold"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Oblique.ttf" kerning="yes">
-                    <font-triplet name="DejaVu Sans Mono" style="italic" weight="normal"/>
-                    <font-triplet name="Courier" style="italic" weight="normal"/>
-                    <font-triplet name="Courier-Oblique" style="italic" weight="normal"/>
-                    <!-- Also handle normal style in case it's passed that way -->
                     <font-triplet name="Courier-Oblique" style="normal" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-BoldOblique.ttf" kerning="yes">
-                    <font-triplet name="DejaVu Sans Mono" style="italic" weight="bold"/>
-                    <font-triplet name="Courier" style="italic" weight="bold"/>
-                    <font-triplet name="Courier-BoldOblique" style="italic" weight="bold"/>
                     <font-triplet name="Courier-BoldOblique" style="normal" weight="bold"/>
                   </font>
                 </fonts>
@@ -180,7 +147,7 @@ jobs:
           </fop>
           XML
 
-      - name: Write custom PDF/UA XSL (roles + frontmatter guards)
+      - name: Write PDF/UA XSL overrides
         run: |
           cat > .github/pdfua/pdfua.xsl <<'XSL'
           <?xml version="1.0" encoding="UTF-8"?>
@@ -190,16 +157,12 @@ jobs:
               version="2.0">
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/topic2fo.xsl"/>
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/static-content.xsl"/>
-
-            <!-- Improve tagging -->
             <xsl:attribute-set name="topic.title" use-attribute-sets="__topic.title">
               <xsl:attribute name="role">H1</xsl:attribute>
             </xsl:attribute-set>
             <xsl:attribute-set name="section.title" use-attribute-sets="__section.title">
               <xsl:attribute name="role">H2</xsl:attribute>
             </xsl:attribute-set>
-
-            <!-- Ensure frontmatter static-content is not empty -->
             <xsl:template name="insertFrontmatterOddHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
             <xsl:template name="insertFrontmatterEvenHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
             <xsl:template name="insertFrontmatterOddFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
@@ -207,14 +170,9 @@ jobs:
           </xsl:stylesheet>
           XSL
 
-      - name: Build Tagged PDF (FOP/UA) + keep temp FO
+      - name: Build Tagged PDF (PDF/UA)
         uses: dita-ot/dita-ot-action@4.3
         with:
-          install: |
-            apt-get update -q
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get install -qy --no-install-recommends nodejs
-            nodejs -v
           plugins: |
             fox.jason.extend.css
             fox.jason.prismjs
@@ -248,7 +206,7 @@ jobs:
           name: dita-pdf-ua
           path: 'out/pdf-ua'
 
-      - name: Upload FO temp for debugging 🧪
+      - name: Upload FO temp 🧪
         if: always()
         uses: actions/upload-artifact@v4
         with:
