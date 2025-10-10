@@ -88,13 +88,13 @@ jobs:
       - name: Create folders
         run: |
           mkdir -p .github/fo
-          mkdir -p plugins/com.example.pdfua/xsl
+          mkdir -p .github/pdfua
 
-      - name: Install system fonts (Noto/DejaVu) and zip
+      - name: Install system fonts (Noto/DejaVu)
         run: |
           sudo apt-get update -q
           sudo apt-get install -qy --no-install-recommends \
-            fonts-noto-core fonts-noto-mono fonts-dejavu-core zip
+            fonts-noto-core fonts-noto-mono fonts-dejavu-core
 
       - name: Write FOP config (PDF/UA + auto font embedding)
         run: |
@@ -118,24 +118,13 @@ jobs:
           </fop>
           XML
 
-      - name: Add minimal role-tagging plugin (H1/H2)
+      - name: Write minimal custom XSL (adds roles H1/H2)
         run: |
-          cat > plugins/com.example.pdfua/plugin.xml <<'XML'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <plugin id="com.example.pdfua"
-                  xmlns="http://dita-ot.sourceforge.net">
-            <require plugin="org.dita.pdf2"/>
-            <feature extension="org.dita.pdf2.xsl.fo">
-              <param name="xsl" value="xsl/attrs.xsl"/>
-            </feature>
-          </plugin>
-          XML
-
-          cat > plugins/com.example.pdfua/xsl/attrs.xsl <<'XSL'
+          cat > .github/pdfua/attrs.xsl <<'XSL'
           <?xml version="1.0" encoding="UTF-8"?>
           <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0">
-            <!-- Import base pdf2 attribute sets using plugin URI for reliability -->
-            <xsl:import href="plugin:org.dita.pdf2:xsl/fo/attrs/attr-set-ref.xsl"/>
+            <!-- Import base pdf2 FO stylesheet -->
+            <xsl:import href="plugin:org.dita.pdf2:xsl/fo/topic2fo.xsl"/>
 
             <!-- Topic title -> H1 -->
             <xsl:attribute-set name="topic.title" use-attribute-sets="__topic.title">
@@ -149,26 +138,20 @@ jobs:
           </xsl:stylesheet>
           XSL
 
-      - name: Package local plugin as ZIP
-        run: |
-          (cd plugins && zip -r com.example.pdfua.zip com.example.pdfua)
-
       - name: Build Tagged PDF (FOP/UA)
         uses: dita-ot/dita-ot-action@4.3
         with:
-          # Keep registry/distribution plugins here (no local dirs)
+          # Only registry/distribution plugins here (no local zips/dirs needed)
           plugins: |
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
-            # Install the local plugin ZIP first
-            dita --install ./plugins/com.example.pdfua.zip
-            # Now build with the FOP config that enables tagging
             dita -i dita/document.ditamap \
                  -o out/pdf-ua \
                  -f pdf \
                  --theme=.github/themes/theme.yaml \
                  --args.fo.userconfig=.github/fo/fop.xconf \
+                 --args.xsl.pdf=.github/pdfua/attrs.xsl \
                  --org.dita.index.skip="yes" \
                  --pdf.formatter=fop
 
