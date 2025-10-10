@@ -85,7 +85,7 @@ jobs:
           sudo apt-get install -qy --no-install-recommends fonts-dejavu-core
           ls -1 /usr/share/fonts/truetype/dejavu | sed -n '1,50p' || true
 
-      - name: Write FOP config (embed DejaVu, PDF/UA)
+      - name: Write FOP config (embed DejaVu, PDF/UA mode)
         run: |
           cat > .github/fo/fop.xconf <<'XML'
           <fop version="1.0">
@@ -169,7 +169,19 @@ jobs:
           </xsl:stylesheet>
           XSL
 
-      - name: Build Tagged PDF (PDF/UA) — force DejaVu families via pdf2 params
+      - name: Write theme overlay to force DejaVu families
+        run: |
+          cat > .github/pdfua/theme-fonts.yaml <<'YAML'
+          extends:
+            - .github/themes/theme.yaml
+          params:
+            serif-font-family: "DejaVu Serif"
+            sans-font-family: "DejaVu Sans"
+            monospace-font-family: "DejaVu Sans Mono"
+            base-font-family: "DejaVu Sans"
+          YAML
+
+      - name: Build Tagged PDF (PDF/UA) — using theme overlay
         uses: dita-ot/dita-ot-action@4.3
         with:
           install: |
@@ -183,13 +195,14 @@ jobs:
           build: |
             XSL="$(pwd)/.github/pdfua/pdfua.xsl"
             FOPCONF="$(pwd)/.github/fo/fop.xconf"
-            THEME="$(pwd)/.github/themes/theme.yaml"
+            THEME="$(pwd)/.github/pdfua/theme-fonts.yaml"
             MAP="$(pwd)/dita/document.ditamap"
             OUT="$(pwd)/out/pdf-ua"
             TMP="$(pwd)/out/tmp-ua"
 
             echo "Using XSL: $XSL"
             echo "Using FOP config: $FOPCONF"
+            echo "Using Theme: $THEME"
             echo "Temp dir: $TMP"
 
             dita -i "$MAP" \
@@ -200,10 +213,6 @@ jobs:
                  --clean.temp=no \
                  --args.fo.userconfig="$FOPCONF" \
                  --args.xsl.pdf="$XSL" \
-                 --args.default.font.family="DejaVu Sans" \
-                 --args.default.sans.font.family="DejaVu Sans" \
-                 --args.default.serif.font.family="DejaVu Serif" \
-                 --args.default.monospace.font.family="DejaVu Sans Mono" \
                  --org.dita.index.skip="yes" \
                  --pdf.formatter=fop
 
