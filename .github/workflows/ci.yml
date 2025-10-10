@@ -88,7 +88,7 @@ jobs:
           nodejs -v
           ls -1 /usr/share/fonts/truetype/noto | head -n 20 || true
 
-      - name: Write FOP config (PDF/UA + embedded fonts + correct triplet substitutions)
+      - name: Write FOP config (PDF/UA + embedded fonts + Times aliases)
         run: |
           cat > .github/fo/fop.xconf <<'XML'
           <fop version="1.0">
@@ -98,113 +98,74 @@ jobs:
               <renderer mime="application/pdf">
                 <pdf-ua-mode>PDF/UA-1</pdf-ua-mode>
                 <fonts>
-                  <!-- Embedded serif: Noto Serif -->
+                  <!-- ===== Embedded serif: Noto Serif mapped to Times names ===== -->
+                  <!-- Base family names -->
                   <font embed-url="/usr/share/fonts/truetype/noto/NotoSerif-Regular.ttf" kerning="yes">
                     <font-triplet name="Noto Serif" style="normal" weight="normal"/>
+                    <font-triplet name="Times"      style="normal" weight="normal"/>
+                    <font-triplet name="Times-Roman" style="normal" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/noto/NotoSerif-Bold.ttf" kerning="yes">
                     <font-triplet name="Noto Serif" style="normal" weight="bold"/>
+                    <font-triplet name="Times"      style="normal" weight="bold"/>
+                    <!-- PDF-style family literal -->
+                    <font-triplet name="Times-Bold" style="normal" weight="bold"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/noto/NotoSerif-Italic.ttf" kerning="yes">
                     <font-triplet name="Noto Serif" style="italic" weight="normal"/>
+                    <font-triplet name="Times"      style="italic" weight="normal"/>
+                    <font-triplet name="Times-Italic" style="italic" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/noto/NotoSerif-BoldItalic.ttf" kerning="yes">
                     <font-triplet name="Noto Serif" style="italic" weight="bold"/>
+                    <font-triplet name="Times"      style="italic" weight="bold"/>
+                    <font-triplet name="Times-BoldItalic" style="italic" weight="bold"/>
                   </font>
 
-                  <!-- Embedded sans: Noto Sans -->
+                  <!-- ===== Embedded sans: Noto Sans (optional Helvetica alias) ===== -->
                   <font embed-url="/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf" kerning="yes">
                     <font-triplet name="Noto Sans" style="normal" weight="normal"/>
+                    <font-triplet name="Helvetica" style="normal" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf" kerning="yes">
                     <font-triplet name="Noto Sans" style="normal" weight="bold"/>
+                    <font-triplet name="Helvetica" style="normal" weight="bold"/>
+                    <font-triplet name="Helvetica-Bold" style="normal" weight="bold"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/noto/NotoSans-Italic.ttf" kerning="yes">
                     <font-triplet name="Noto Sans" style="italic" weight="normal"/>
+                    <font-triplet name="Helvetica" style="italic" weight="normal"/>
+                    <font-triplet name="Helvetica-Oblique" style="italic" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/noto/NotoSans-BoldItalic.ttf" kerning="yes">
                     <font-triplet name="Noto Sans" style="italic" weight="bold"/>
+                    <font-triplet name="Helvetica" style="italic" weight="bold"/>
+                    <font-triplet name="Helvetica-BoldOblique" style="italic" weight="bold"/>
                   </font>
 
-                  <!-- Embedded mono: DejaVu Sans Mono -->
+                  <!-- ===== Embedded mono: DejaVu Sans Mono + Courier alias ===== -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans Mono" style="normal" weight="normal"/>
+                    <font-triplet name="Courier" style="normal" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans Mono" style="normal" weight="bold"/>
+                    <font-triplet name="Courier" style="normal" weight="bold"/>
+                    <font-triplet name="Courier-Bold" style="normal" weight="bold"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Oblique.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans Mono" style="italic" weight="normal"/>
+                    <font-triplet name="Courier" style="italic" weight="normal"/>
+                    <font-triplet name="Courier-Oblique" style="italic" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-BoldOblique.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans Mono" style="italic" weight="bold"/>
+                    <font-triplet name="Courier" style="italic" weight="bold"/>
+                    <font-triplet name="Courier-BoldOblique" style="italic" weight="bold"/>
                   </font>
 
-                  <!-- Also scan system fonts -->
+                  <!-- Also scan system fonts as a fallback -->
                   <auto-detect/>
-
-                  <!-- Correct triplet-based substitutions for base-14 families -->
-                  <substitutions>
-                    <!-- Times family -> Noto Serif -->
-                    <substitution>
-                      <from><font-triplet name="Times" style="normal" weight="normal"/></from>
-                      <to><font-triplet name="Noto Serif" style="normal" weight="normal"/></to>
-                    </substitution>
-                    <substitution>
-                      <from><font-triplet name="Times" style="normal" weight="bold"/></from>
-                      <to><font-triplet name="Noto Serif" style="normal" weight="bold"/></to>
-                    </substitution>
-                    <substitution>
-                      <from><font-triplet name="Times" style="italic" weight="normal"/></from>
-                      <to><font-triplet name="Noto Serif" style="italic" weight="normal"/></to>
-                    </substitution>
-                    <substitution>
-                      <from><font-triplet name="Times" style="italic" weight="bold"/></from>
-                      <to><font-triplet name="Noto Serif" style="italic" weight="bold"/></to>
-                    </substitution>
-
-                    <!-- Some generators use 'Times-Roman' as the name -->
-                    <substitution>
-                      <from><font-triplet name="Times-Roman" style="normal" weight="normal"/></from>
-                      <to><font-triplet name="Noto Serif" style="normal" weight="normal"/></to>
-                    </substitution>
-
-                    <!-- Helvetica -> Noto Sans -->
-                    <substitution>
-                      <from><font-triplet name="Helvetica" style="normal" weight="normal"/></from>
-                      <to><font-triplet name="Noto Sans" style="normal" weight="normal"/></to>
-                    </substitution>
-                    <substitution>
-                      <from><font-triplet name="Helvetica" style="normal" weight="bold"/></from>
-                      <to><font-triplet name="Noto Sans" style="normal" weight="bold"/></to>
-                    </substitution>
-                    <substitution>
-                      <from><font-triplet name="Helvetica" style="italic" weight="normal"/></from>
-                      <to><font-triplet name="Noto Sans" style="italic" weight="normal"/></to>
-                    </substitution>
-                    <substitution>
-                      <from><font-triplet name="Helvetica" style="italic" weight="bold"/></from>
-                      <to><font-triplet name="Noto Sans" style="italic" weight="bold"/></to>
-                    </substitution>
-
-                    <!-- Courier -> DejaVu Sans Mono -->
-                    <substitution>
-                      <from><font-triplet name="Courier" style="normal" weight="normal"/></from>
-                      <to><font-triplet name="DejaVu Sans Mono" style="normal" weight="normal"/></to>
-                    </substitution>
-                    <substitution>
-                      <from><font-triplet name="Courier" style="normal" weight="bold"/></from>
-                      <to><font-triplet name="DejaVu Sans Mono" style="normal" weight="bold"/></to>
-                    </substitution>
-                    <substitution>
-                      <from><font-triplet name="Courier" style="italic" weight="normal"/></from>
-                      <to><font-triplet name="DejaVu Sans Mono" style="italic" weight="normal"/></to>
-                    </substitution>
-                    <substitution>
-                      <from><font-triplet name="Courier" style="italic" weight="bold"/></from>
-                      <to><font-triplet name="DejaVu Sans Mono" style="italic" weight="bold"/></to>
-                    </substitution>
-                  </substitutions>
                 </fonts>
               </renderer>
             </renderers>
