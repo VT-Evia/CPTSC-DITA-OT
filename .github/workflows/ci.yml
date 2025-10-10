@@ -89,7 +89,7 @@ jobs:
           # sanity: list the DejaVu files we’ll reference
           ls -1 /usr/share/fonts/truetype/dejavu | sed -n '1,50p' || true
 
-      - name: Write FOP config (PDF/UA + embedded DejaVu fonts + Times/Helvetica/Courier aliases)
+      - name: Write FOP config (PDF/UA + embedded DejaVu + robust aliases)
         run: |
           cat > .github/fo/fop.xconf <<'XML'
           <fop version="1.0">
@@ -122,24 +122,33 @@ jobs:
                   </font>
 
                   <!-- ===== Embed DejaVu Sans and alias Helvetica* to it ===== -->
+                  <!-- Normal -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans" style="normal" weight="normal"/>
                     <font-triplet name="Helvetica" style="normal" weight="normal"/>
                   </font>
+                  <!-- Bold -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans" style="normal" weight="bold"/>
                     <font-triplet name="Helvetica" style="normal" weight="bold"/>
                     <font-triplet name="Helvetica-Bold" style="normal" weight="bold"/>
                   </font>
+                  <!-- Italic/Oblique -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans" style="italic" weight="normal"/>
                     <font-triplet name="Helvetica" style="italic" weight="normal"/>
+                    <!-- Handle PDF-style family literal with style=italic -->
                     <font-triplet name="Helvetica-Oblique" style="italic" weight="normal"/>
+                    <!-- And handle it if style is treated as 'normal' (some generators do this) -->
+                    <font-triplet name="Helvetica-Oblique" style="normal" weight="normal"/>
                   </font>
+                  <!-- BoldItalic/BoldOblique -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans" style="italic" weight="bold"/>
                     <font-triplet name="Helvetica" style="italic" weight="bold"/>
                     <font-triplet name="Helvetica-BoldOblique" style="italic" weight="bold"/>
+                    <!-- Also guard for 'normal' style on PDF-style family -->
+                    <font-triplet name="Helvetica-BoldOblique" style="normal" weight="bold"/>
                   </font>
 
                   <!-- ===== Embed DejaVu Sans Mono and alias Courier* to it ===== -->
@@ -156,11 +165,14 @@ jobs:
                     <font-triplet name="DejaVu Sans Mono" style="italic" weight="normal"/>
                     <font-triplet name="Courier" style="italic" weight="normal"/>
                     <font-triplet name="Courier-Oblique" style="italic" weight="normal"/>
+                    <!-- Also handle normal style in case it's passed that way -->
+                    <font-triplet name="Courier-Oblique" style="normal" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-BoldOblique.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans Mono" style="italic" weight="bold"/>
                     <font-triplet name="Courier" style="italic" weight="bold"/>
                     <font-triplet name="Courier-BoldOblique" style="italic" weight="bold"/>
+                    <font-triplet name="Courier-BoldOblique" style="normal" weight="bold"/>
                   </font>
                 </fonts>
               </renderer>
