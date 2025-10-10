@@ -32,9 +32,6 @@ jobs:
             fox.jason.favicon
             fox.jason.open-graph
           project: .github/dita-ot/html.xml
-          # If you have a DITAVal, add the following:
-          # -- build: | 
-          #    dita -i dita/document.ditamap -o out/html -f html5 --filter=myfilter.ditaval
 
       # ────────────────────────────────────────────────
       # 2️⃣ Deploy HTML to GitHub Pages
@@ -61,9 +58,9 @@ jobs:
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
-            dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes"
-          # If you have a DITAVal, replace the previous line with:
-          # dita -i dita/document.ditamap -o out/pdf -f pdf --theme=.github/themes/theme.yaml --org.dita.index.skip="yes" --filter=myfilter.ditaval
+            dita -i dita/document.ditamap -o out/pdf -f pdf \
+                 --theme=.github/themes/theme.yaml \
+                 --org.dita.index.skip="yes"
 
       # ────────────────────────────────────────────────
       # 4️⃣ Upload Standard PDF
@@ -75,7 +72,7 @@ jobs:
           path: 'out/pdf'
 
   # ─────────────────────────────────────────────────────
-  # 5️⃣ Build Tagged PDF (PDF/UA Accessible Version)
+  # 5️⃣ Build Tagged PDF (Accessible PDF/UA)
   # ─────────────────────────────────────────────────────
   build-tagged-pdf:
     name: Build Tagged PDF (PDF/UA) 🏷️
@@ -100,38 +97,29 @@ jobs:
         run: |
           cat > .github/fo/fop.xconf <<'XML'
           <fop version="1.0">
-            <!-- Enable structure tree for tagging -->
             <accessibility>true</accessibility>
             <renderers>
               <renderer mime="application/pdf">
-                <!-- Enable PDF/UA tagging -->
                 <pdf-ua-mode>PDF/UA-1</pdf-ua-mode>
                 <fonts>
-                  <!-- Auto-detect system fonts -->
                   <auto-detect/>
                 </fonts>
-                <!-- Optional PDF/A archival mode
-                <pdf-a-mode>PDF/A-2u</pdf-a-mode>
-                -->
               </renderer>
             </renderers>
           </fop>
           XML
 
-      - name: Write minimal custom XSL (adds roles H1/H2)
+      - name: Write minimal custom XSL (adds H1/H2 roles)
         run: |
           cat > .github/pdfua/attrs.xsl <<'XSL'
           <?xml version="1.0" encoding="UTF-8"?>
           <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0">
-            <!-- Import base pdf2 FO stylesheet -->
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/topic2fo.xsl"/>
 
-            <!-- Topic title -> H1 -->
             <xsl:attribute-set name="topic.title" use-attribute-sets="__topic.title">
               <xsl:attribute name="role">H1</xsl:attribute>
             </xsl:attribute-set>
 
-            <!-- Section title -> H2 -->
             <xsl:attribute-set name="section.title" use-attribute-sets="__section.title">
               <xsl:attribute name="role">H2</xsl:attribute>
             </xsl:attribute-set>
@@ -141,17 +129,25 @@ jobs:
       - name: Build Tagged PDF (FOP/UA)
         uses: dita-ot/dita-ot-action@4.3
         with:
-          # Only registry/distribution plugins here (no local zips/dirs needed)
           plugins: |
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
-            dita -i dita/document.ditamap \
-                 -o out/pdf-ua \
+            XSL="$(pwd)/.github/pdfua/attrs.xsl"
+            FOPCONF="$(pwd)/.github/fo/fop.xconf"
+            THEME="$(pwd)/.github/themes/theme.yaml"
+            MAP="$(pwd)/dita/document.ditamap"
+            OUT="$(pwd)/out/pdf-ua"
+
+            echo "Using XSL: $XSL"
+            echo "Using FOP config: $FOPCONF"
+
+            dita -i "$MAP" \
+                 -o "$OUT" \
                  -f pdf \
-                 --theme=.github/themes/theme.yaml \
-                 --args.fo.userconfig=.github/fo/fop.xconf \
-                 --args.xsl.pdf=.github/pdfua/attrs.xsl \
+                 --theme="$THEME" \
+                 --args.fo.userconfig="$FOPCONF" \
+                 --args.xsl.pdf="$XSL" \
                  --org.dita.index.skip="yes" \
                  --pdf.formatter=fop
 
