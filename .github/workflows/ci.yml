@@ -79,16 +79,17 @@ jobs:
           mkdir -p out/pdf-ua
           mkdir -p out/tmp-ua
 
-      - name: Install dependencies (Node.js + fonts)
+      - name: Install dependencies (Node.js + DejaVu fonts)
         run: |
           sudo apt-get update -q
           export DEBIAN_FRONTEND=noninteractive
           sudo apt-get install -qy --no-install-recommends nodejs \
-            fonts-noto-core fonts-noto-mono fonts-dejavu-core
+            fonts-dejavu-core
           nodejs -v
-          ls -1 /usr/share/fonts/truetype/noto | head -n 20 || true
+          # sanity: list the DejaVu files we’ll reference
+          ls -1 /usr/share/fonts/truetype/dejavu | sed -n '1,50p' || true
 
-      - name: Write FOP config (PDF/UA + embedded fonts + Times aliases)
+      - name: Write FOP config (PDF/UA + embedded DejaVu fonts + Times/Helvetica/Courier aliases)
         run: |
           cat > .github/fo/fop.xconf <<'XML'
           <fop version="1.0">
@@ -98,52 +99,50 @@ jobs:
               <renderer mime="application/pdf">
                 <pdf-ua-mode>PDF/UA-1</pdf-ua-mode>
                 <fonts>
-                  <!-- ===== Embedded serif: Noto Serif mapped to Times names ===== -->
-                  <!-- Base family names -->
-                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSerif-Regular.ttf" kerning="yes">
-                    <font-triplet name="Noto Serif" style="normal" weight="normal"/>
-                    <font-triplet name="Times"      style="normal" weight="normal"/>
+                  <!-- ===== Embed DejaVu Serif and alias Times* to it ===== -->
+                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf" kerning="yes">
+                    <font-triplet name="DejaVu Serif" style="normal" weight="normal"/>
+                    <font-triplet name="Times" style="normal" weight="normal"/>
                     <font-triplet name="Times-Roman" style="normal" weight="normal"/>
                   </font>
-                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSerif-Bold.ttf" kerning="yes">
-                    <font-triplet name="Noto Serif" style="normal" weight="bold"/>
-                    <font-triplet name="Times"      style="normal" weight="bold"/>
-                    <!-- PDF-style family literal -->
+                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf" kerning="yes">
+                    <font-triplet name="DejaVu Serif" style="normal" weight="bold"/>
+                    <font-triplet name="Times" style="normal" weight="bold"/>
                     <font-triplet name="Times-Bold" style="normal" weight="bold"/>
                   </font>
-                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSerif-Italic.ttf" kerning="yes">
-                    <font-triplet name="Noto Serif" style="italic" weight="normal"/>
-                    <font-triplet name="Times"      style="italic" weight="normal"/>
+                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf" kerning="yes">
+                    <font-triplet name="DejaVu Serif" style="italic" weight="normal"/>
+                    <font-triplet name="Times" style="italic" weight="normal"/>
                     <font-triplet name="Times-Italic" style="italic" weight="normal"/>
                   </font>
-                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSerif-BoldItalic.ttf" kerning="yes">
-                    <font-triplet name="Noto Serif" style="italic" weight="bold"/>
-                    <font-triplet name="Times"      style="italic" weight="bold"/>
+                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif-BoldItalic.ttf" kerning="yes">
+                    <font-triplet name="DejaVu Serif" style="italic" weight="bold"/>
+                    <font-triplet name="Times" style="italic" weight="bold"/>
                     <font-triplet name="Times-BoldItalic" style="italic" weight="bold"/>
                   </font>
 
-                  <!-- ===== Embedded sans: Noto Sans (optional Helvetica alias) ===== -->
-                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf" kerning="yes">
-                    <font-triplet name="Noto Sans" style="normal" weight="normal"/>
+                  <!-- ===== Embed DejaVu Sans and alias Helvetica* to it ===== -->
+                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf" kerning="yes">
+                    <font-triplet name="DejaVu Sans" style="normal" weight="normal"/>
                     <font-triplet name="Helvetica" style="normal" weight="normal"/>
                   </font>
-                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf" kerning="yes">
-                    <font-triplet name="Noto Sans" style="normal" weight="bold"/>
+                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" kerning="yes">
+                    <font-triplet name="DejaVu Sans" style="normal" weight="bold"/>
                     <font-triplet name="Helvetica" style="normal" weight="bold"/>
                     <font-triplet name="Helvetica-Bold" style="normal" weight="bold"/>
                   </font>
-                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSans-Italic.ttf" kerning="yes">
-                    <font-triplet name="Noto Sans" style="italic" weight="normal"/>
+                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf" kerning="yes">
+                    <font-triplet name="DejaVu Sans" style="italic" weight="normal"/>
                     <font-triplet name="Helvetica" style="italic" weight="normal"/>
                     <font-triplet name="Helvetica-Oblique" style="italic" weight="normal"/>
                   </font>
-                  <font embed-url="/usr/share/fonts/truetype/noto/NotoSans-BoldItalic.ttf" kerning="yes">
-                    <font-triplet name="Noto Sans" style="italic" weight="bold"/>
+                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf" kerning="yes">
+                    <font-triplet name="DejaVu Sans" style="italic" weight="bold"/>
                     <font-triplet name="Helvetica" style="italic" weight="bold"/>
                     <font-triplet name="Helvetica-BoldOblique" style="italic" weight="bold"/>
                   </font>
 
-                  <!-- ===== Embedded mono: DejaVu Sans Mono + Courier alias ===== -->
+                  <!-- ===== Embed DejaVu Sans Mono and alias Courier* to it ===== -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf" kerning="yes">
                     <font-triplet name="DejaVu Sans Mono" style="normal" weight="normal"/>
                     <font-triplet name="Courier" style="normal" weight="normal"/>
@@ -163,9 +162,6 @@ jobs:
                     <font-triplet name="Courier" style="italic" weight="bold"/>
                     <font-triplet name="Courier-BoldOblique" style="italic" weight="bold"/>
                   </font>
-
-                  <!-- Also scan system fonts as a fallback -->
-                  <auto-detect/>
                 </fonts>
               </renderer>
             </renderers>
