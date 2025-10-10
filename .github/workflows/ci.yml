@@ -13,9 +13,7 @@ jobs:
       - name: Git checkout
         uses: actions/checkout@v2
 
-      # ────────────────────────────────────────────────
-      # 1️⃣ Build Bootstrap HTML
-      # ────────────────────────────────────────────────
+      # 1) Build Bootstrap HTML
       - name: Build Bootstrap ⚙️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -33,9 +31,7 @@ jobs:
             fox.jason.open-graph
           project: .github/dita-ot/html.xml
 
-      # ────────────────────────────────────────────────
-      # 2️⃣ Deploy HTML to GitHub Pages
-      # ────────────────────────────────────────────────
+      # 2) Deploy HTML
       - name: Deploy HTML 🚀
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
@@ -43,9 +39,7 @@ jobs:
           BRANCH: gh-pages
           FOLDER: out/html
 
-      # ────────────────────────────────────────────────
-      # 3️⃣ Build Standard PDF
-      # ────────────────────────────────────────────────
+      # 3) Build standard PDF
       - name: Build PDF 🖨️
         uses: dita-ot/dita-ot-action@4.3
         with:
@@ -62,18 +56,14 @@ jobs:
                  --theme=.github/themes/theme.yaml \
                  --org.dita.index.skip="yes"
 
-      # ────────────────────────────────────────────────
-      # 4️⃣ Upload Standard PDF
-      # ────────────────────────────────────────────────
+      # 4) Upload standard PDF
       - name: Upload PDF 📚
         uses: actions/upload-artifact@v4
         with:
           name: dita-pdf
           path: 'out/pdf'
 
-  # ─────────────────────────────────────────────────────
-  # 5️⃣ Build Tagged PDF (Accessible PDF/UA)
-  # ─────────────────────────────────────────────────────
+  # 5) Build Tagged PDF (PDF/UA)
   build-tagged-pdf:
     name: Build Tagged PDF (PDF/UA) 🏷️
     runs-on: ubuntu-latest
@@ -87,7 +77,7 @@ jobs:
           mkdir -p .github/fo
           mkdir -p .github/pdfua
 
-      - name: Install dependencies (Node.js + Fonts)
+      - name: Install dependencies (Node.js + fonts)
         run: |
           sudo apt-get update -q
           export DEBIAN_FRONTEND=noninteractive
@@ -111,46 +101,54 @@ jobs:
           </fop>
           XML
 
-      - name: Write custom XSL for roles (H1/H2) at FO generation
+      - name: Write custom PDF/UA XSL (roles + non-empty static-content)
         run: |
-          cat > .github/pdfua/pdfua-roles.xsl <<'XSL'
+          cat > .github/pdfua/pdfua.xsl <<'XSL'
           <?xml version="1.0" encoding="UTF-8"?>
           <xsl:stylesheet
               xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+              xmlns:fo="http://www.w3.org/1999/XSL/Format"
               version="2.0">
-            <!-- Import base pdf2 FO generator -->
+            <!-- Import base pdf2 FO and static-content logic -->
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/topic2fo.xsl"/>
-            <!-- Add roles to help screen readers/validators detect headings -->
+            <xsl:import href="plugin:org.dita.pdf2:xsl/fo/static-content.xsl"/>
+
+            <!-- Headings: help Acrobat recognize structure -->
             <xsl:attribute-set name="topic.title" use-attribute-sets="__topic.title">
               <xsl:attribute name="role">H1</xsl:attribute>
             </xsl:attribute-set>
             <xsl:attribute-set name="section.title" use-attribute-sets="__section.title">
               <xsl:attribute name="role">H2</xsl:attribute>
             </xsl:attribute-set>
-          </xsl:stylesheet>
-          XSL
 
-      - name: Write FO post-processor to fix empty static-content
-        run: |
-          cat > .github/pdfua/fo-fix-static-content.xsl <<'XSL'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <xsl:stylesheet
-              xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-              xmlns:fo="http://www.w3.org/1999/XSL/Format"
-              version="2.0">
-            <!-- Identity transform -->
-            <xsl:template match="@*|node()">
-              <xsl:copy>
-                <xsl:apply-templates select="@*|node()"/>
-              </xsl:copy>
+            <!-- Guarantee non-empty BODY headers/footers -->
+            <xsl:template name="insertBodyOddHeader">
+              <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
             </xsl:template>
-            <!-- If a static-content has no element children (or only whitespace), insert a minimal artifact block -->
-            <xsl:template match="fo:static-content[not(node()[self::node()[normalize-space()!=''] or self::*/self::fo:*])]">
-              <xsl:copy>
-                <xsl:apply-templates select="@*"/>
-                <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
-              </xsl:copy>
+            <xsl:template name="insertBodyEvenHeader">
+              <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
             </xsl:template>
+            <xsl:template name="insertBodyOddFooter">
+              <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
+            </xsl:template>
+            <xsl:template name="insertBodyEvenFooter">
+              <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
+            </xsl:template>
+
+            <!-- (Optional) Uncomment if your bookmap uses these sequences
+            <xsl:template name="insertFrontMatterOddHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            <xsl:template name="insertFrontMatterEvenHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            <xsl:template name="insertFrontMatterOddFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            <xsl:template name="insertFrontMatterEvenFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            <xsl:template name="insertTocOddHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            <xsl:template name="insertTocEvenHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            <xsl:template name="insertTocOddFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            <xsl:template name="insertTocEvenFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            <xsl:template name="insertIndexOddHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            <xsl:template name="insertIndexEvenHeader"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            <xsl:template name="insertIndexOddFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            <xsl:template name="insertIndexEvenFooter"><fo:block role="artifact">&#160;</fo:block></xsl:template>
+            -->
           </xsl:stylesheet>
           XSL
 
@@ -166,15 +164,13 @@ jobs:
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
-            ROLES_XSL="$(pwd)/.github/pdfua/pdfua-roles.xsl"
-            FOFIX_XSL="$(pwd)/.github/pdfua/fo-fix-static-content.xsl"
+            XSL="$(pwd)/.github/pdfua/pdfua.xsl"
             FOPCONF="$(pwd)/.github/fo/fop.xconf"
             THEME="$(pwd)/.github/themes/theme.yaml"
             MAP="$(pwd)/dita/document.ditamap"
             OUT="$(pwd)/out/pdf-ua"
 
-            echo "Using roles XSL: $ROLES_XSL"
-            echo "Using FO-fix XSL: $FOFIX_XSL"
+            echo "Using XSL: $XSL"
             echo "Using FOP config: $FOPCONF"
 
             dita -i "$MAP" \
@@ -182,8 +178,7 @@ jobs:
                  -f pdf \
                  --theme="$THEME" \
                  --args.fo.userconfig="$FOPCONF" \
-                 --args.xsl.pdf="$ROLES_XSL" \
-                 --args.xsl.fo="$FOFIX_XSL" \
+                 --args.xsl.pdf="$XSL" \
                  --org.dita.index.skip="yes" \
                  --pdf.formatter=fop
 
