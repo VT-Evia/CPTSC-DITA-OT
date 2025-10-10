@@ -111,33 +111,45 @@ jobs:
           </fop>
           XML
 
-      - name: Write custom PDF/UA XSL (H1/H2 roles + non-empty static-content)
+      - name: Write custom XSL for roles (H1/H2) at FO generation
         run: |
-          cat > .github/pdfua/pdfua.xsl <<'XSL'
+          cat > .github/pdfua/pdfua-roles.xsl <<'XSL'
           <?xml version="1.0" encoding="UTF-8"?>
           <xsl:stylesheet
               xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-              xmlns:fo="http://www.w3.org/1999/XSL/Format"
               version="2.0">
-            <!-- Import base pdf2 FO -->
+            <!-- Import base pdf2 FO generator -->
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/topic2fo.xsl"/>
-
-            <!-- Headings -->
+            <!-- Add roles to help screen readers/validators detect headings -->
             <xsl:attribute-set name="topic.title" use-attribute-sets="__topic.title">
               <xsl:attribute name="role">H1</xsl:attribute>
             </xsl:attribute-set>
             <xsl:attribute-set name="section.title" use-attribute-sets="__section.title">
               <xsl:attribute name="role">H2</xsl:attribute>
             </xsl:attribute-set>
+          </xsl:stylesheet>
+          XSL
 
-            <!-- Ensure fo:static-content never empty (header/footer) -->
-            <xsl:template name="insertStaticContent">
-              <xsl:param name="pageclass"/>
-              <xsl:param name="sequence"/>
-              <xsl:param name="position"/>
-              <xsl:param name="gentext-key"/>
-              <!-- Minimal artifact so content model is satisfied -->
-              <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
+      - name: Write FO post-processor to fix empty static-content
+        run: |
+          cat > .github/pdfua/fo-fix-static-content.xsl <<'XSL'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <xsl:stylesheet
+              xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+              xmlns:fo="http://www.w3.org/1999/XSL/Format"
+              version="2.0">
+            <!-- Identity transform -->
+            <xsl:template match="@*|node()">
+              <xsl:copy>
+                <xsl:apply-templates select="@*|node()"/>
+              </xsl:copy>
+            </xsl:template>
+            <!-- If a static-content has no element children (or only whitespace), insert a minimal artifact block -->
+            <xsl:template match="fo:static-content[not(node()[self::node()[normalize-space()!=''] or self::*/self::fo:*])]">
+              <xsl:copy>
+                <xsl:apply-templates select="@*"/>
+                <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
+              </xsl:copy>
             </xsl:template>
           </xsl:stylesheet>
           XSL
@@ -154,13 +166,15 @@ jobs:
             fox.jason.extend.css
             fox.jason.prismjs
           build: |
-            XSL="$(pwd)/.github/pdfua/pdfua.xsl"
+            ROLES_XSL="$(pwd)/.github/pdfua/pdfua-roles.xsl"
+            FOFIX_XSL="$(pwd)/.github/pdfua/fo-fix-static-content.xsl"
             FOPCONF="$(pwd)/.github/fo/fop.xconf"
             THEME="$(pwd)/.github/themes/theme.yaml"
             MAP="$(pwd)/dita/document.ditamap"
             OUT="$(pwd)/out/pdf-ua"
 
-            echo "Using XSL: $XSL"
+            echo "Using roles XSL: $ROLES_XSL"
+            echo "Using FO-fix XSL: $FOFIX_XSL"
             echo "Using FOP config: $FOPCONF"
 
             dita -i "$MAP" \
@@ -168,7 +182,8 @@ jobs:
                  -f pdf \
                  --theme="$THEME" \
                  --args.fo.userconfig="$FOPCONF" \
-                 --args.xsl.pdf="$XSL" \
+                 --args.xsl.pdf="$ROLES_XSL" \
+                 --args.xsl.fo="$FOFIX_XSL" \
                  --org.dita.index.skip="yes" \
                  --pdf.formatter=fop
 
