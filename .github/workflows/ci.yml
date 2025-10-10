@@ -86,7 +86,6 @@ jobs:
         run: |
           mkdir -p .github/fo
           mkdir -p .github/pdfua
-          mkdir -p out/pdf-ua
 
       - name: Install dependencies (Node.js + Fonts)
         run: |
@@ -112,43 +111,36 @@ jobs:
           </fop>
           XML
 
-      - name: Write minimal custom XSL (adds H1/H2 roles)
+      - name: Write custom PDF/UA XSL (H1/H2 roles + non-empty static-content)
         run: |
           cat > .github/pdfua/pdfua.xsl <<'XSL'
           <?xml version="1.0" encoding="UTF-8"?>
-          <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0">
-            <!-- Import base pdf2 FO stylesheet -->
+          <xsl:stylesheet
+              xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+              xmlns:fo="http://www.w3.org/1999/XSL/Format"
+              version="2.0">
+            <!-- Import base pdf2 FO -->
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/topic2fo.xsl"/>
 
-            <!-- Headings: help Acrobat recognize structure -->
+            <!-- Headings -->
             <xsl:attribute-set name="topic.title" use-attribute-sets="__topic.title">
               <xsl:attribute name="role">H1</xsl:attribute>
             </xsl:attribute-set>
             <xsl:attribute-set name="section.title" use-attribute-sets="__section.title">
               <xsl:attribute name="role">H2</xsl:attribute>
             </xsl:attribute-set>
+
+            <!-- Ensure fo:static-content never empty (header/footer) -->
+            <xsl:template name="insertStaticContent">
+              <xsl:param name="pageclass"/>
+              <xsl:param name="sequence"/>
+              <xsl:param name="position"/>
+              <xsl:param name="gentext-key"/>
+              <!-- Minimal artifact so content model is satisfied -->
+              <fo:block role="artifact"><xsl:text>&#160;</xsl:text></fo:block>
+            </xsl:template>
           </xsl:stylesheet>
           XSL
-
-      - name: Write PDF theme overlay (guarantee non-empty header/footer)
-        run: |
-          # This overlay extends your existing theme and ensures headers/footers
-          # always have content so FOP never sees empty fo:static-content.
-          cat > .github/pdfua/theme-overlay.yaml <<'YAML'
-          # Overlay theme used only for the tagged PDF build
-          extends: ../themes/theme.yaml
-          # Ensure header/footer content exists on all pages
-          header:
-            content: '{chapter-title}'  # falls back to title/part name when available
-            text-align: end
-            start-indent: 10mm
-            end-indent: 10mm
-          footer:
-            content: '{folio-with-total}'
-            text-align: center
-            start-indent: 10mm
-            end-indent: 10mm
-          YAML
 
       - name: Build Tagged PDF (FOP/UA)
         uses: dita-ot/dita-ot-action@4.3
@@ -164,18 +156,17 @@ jobs:
           build: |
             XSL="$(pwd)/.github/pdfua/pdfua.xsl"
             FOPCONF="$(pwd)/.github/fo/fop.xconf"
-            THEME_OVERLAY="$(pwd)/.github/pdfua/theme-overlay.yaml"
+            THEME="$(pwd)/.github/themes/theme.yaml"
             MAP="$(pwd)/dita/document.ditamap"
             OUT="$(pwd)/out/pdf-ua"
 
             echo "Using XSL: $XSL"
             echo "Using FOP config: $FOPCONF"
-            echo "Using theme overlay: $THEME_OVERLAY"
 
             dita -i "$MAP" \
                  -o "$OUT" \
                  -f pdf \
-                 --theme="$THEME_OVERLAY" \
+                 --theme="$THEME" \
                  --args.fo.userconfig="$FOPCONF" \
                  --args.xsl.pdf="$XSL" \
                  --org.dita.index.skip="yes" \
