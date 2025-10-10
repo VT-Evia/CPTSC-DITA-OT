@@ -56,14 +56,13 @@ jobs:
                  --theme=.github/themes/theme.yaml \
                  --org.dita.index.skip="yes"
 
-      # 4️⃣ Upload Regular PDF
       - name: Upload PDF 📚
         uses: actions/upload-artifact@v4
         with:
           name: dita-pdf
           path: 'out/pdf'
 
-  # 5️⃣ Build Tagged PDF (PDF/UA)
+  # 4️⃣ Build Tagged PDF (PDF/UA)
   build-tagged-pdf:
     name: Build Tagged PDF (PDF/UA) 🏷️
     runs-on: ubuntu-latest
@@ -79,14 +78,13 @@ jobs:
           mkdir -p out/pdf-ua
           mkdir -p out/tmp-ua
 
-      - name: Install Node.js and fonts
+      - name: Install system fonts
         run: |
           sudo apt-get update -q
           export DEBIAN_FRONTEND=noninteractive
-          sudo apt-get install -qy --no-install-recommends nodejs fonts-dejavu-core
-          nodejs -v
+          sudo apt-get install -qy --no-install-recommends fonts-dejavu-core
 
-      - name: Write FOP config (DejaVu + Helvetica-Oblique families)
+      - name: Write FOP config
         run: |
           cat > .github/fo/fop.xconf <<'XML'
           <fop version="1.0">
@@ -96,50 +94,18 @@ jobs:
               <renderer mime="application/pdf">
                 <pdf-ua-mode>PDF/UA-1</pdf-ua-mode>
                 <fonts>
-                  <!-- Serif family -->
-                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf" kerning="yes">
-                    <font-triplet name="Times" style="normal" weight="normal"/>
-                    <font-triplet name="Times-Roman" style="normal" weight="normal"/>
-                  </font>
-                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf" kerning="yes">
-                    <font-triplet name="Times" style="normal" weight="bold"/>
-                    <font-triplet name="Times-Bold" style="normal" weight="bold"/>
-                  </font>
-                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf" kerning="yes">
-                    <font-triplet name="Times-Italic" style="italic" weight="normal"/>
-                  </font>
-                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSerif-BoldItalic.ttf" kerning="yes">
-                    <font-triplet name="Times-BoldItalic" style="italic" weight="bold"/>
-                  </font>
-
-                  <!-- Sans family -->
+                  <!-- Embed DejaVu Sans variants and alias Helvetica names -->
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf" kerning="yes">
                     <font-triplet name="Helvetica" style="normal" weight="normal"/>
+                  </font>
+                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf" kerning="yes">
+                    <font-triplet name="Helvetica-Oblique" style="normal" weight="normal"/>
                   </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" kerning="yes">
                     <font-triplet name="Helvetica-Bold" style="normal" weight="bold"/>
                   </font>
-                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-Oblique.ttf" kerning="yes">
-                    <font-triplet name="Helvetica-Oblique" style="normal" weight="normal"/>
-                    <font-triplet name="Helvetica" style="oblique" weight="normal"/>
-                  </font>
                   <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSans-BoldOblique.ttf" kerning="yes">
                     <font-triplet name="Helvetica-BoldOblique" style="normal" weight="bold"/>
-                    <font-triplet name="Helvetica" style="oblique" weight="bold"/>
-                  </font>
-
-                  <!-- Mono family -->
-                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf" kerning="yes">
-                    <font-triplet name="Courier" style="normal" weight="normal"/>
-                  </font>
-                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf" kerning="yes">
-                    <font-triplet name="Courier-Bold" style="normal" weight="bold"/>
-                  </font>
-                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Oblique.ttf" kerning="yes">
-                    <font-triplet name="Courier-Oblique" style="normal" weight="normal"/>
-                  </font>
-                  <font embed-url="/usr/share/fonts/truetype/dejavu/DejaVuSansMono-BoldOblique.ttf" kerning="yes">
-                    <font-triplet name="Courier-BoldOblique" style="normal" weight="bold"/>
                   </font>
                 </fonts>
               </renderer>
@@ -147,14 +113,13 @@ jobs:
           </fop>
           XML
 
-      - name: Write PDF/UA XSL overrides
+      - name: Write PDF/UA XSL
         run: |
           cat > .github/pdfua/pdfua.xsl <<'XSL'
           <?xml version="1.0" encoding="UTF-8"?>
-          <xsl:stylesheet
-              xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-              xmlns:fo="http://www.w3.org/1999/XSL/Format"
-              version="2.0">
+          <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                          xmlns:fo="http://www.w3.org/1999/XSL/Format"
+                          version="2.0">
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/topic2fo.xsl"/>
             <xsl:import href="plugin:org.dita.pdf2:xsl/fo/static-content.xsl"/>
             <xsl:attribute-set name="topic.title" use-attribute-sets="__topic.title">
@@ -170,9 +135,14 @@ jobs:
           </xsl:stylesheet>
           XSL
 
-      - name: Build Tagged PDF (PDF/UA)
+      - name: Build Tagged PDF (PDF/UA) with Node installed in action
         uses: dita-ot/dita-ot-action@4.3
         with:
+          install: |
+            apt-get update -q
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get install -qy --no-install-recommends nodejs fonts-dejavu-core
+            nodejs -v
           plugins: |
             fox.jason.extend.css
             fox.jason.prismjs
