@@ -121,8 +121,8 @@ Instead, each workflow run on the **Actions** page provides the PDF as a downloa
 
 ### 🖼️ PDF Theme
 
-- Replace the logo at **`.github/themes/logo.png`** with your own.  
-- Keep the **filename as `logo.png`** unless you also update the workflow.  
+- Replace the logo at **`.github/themes/logo.jpg`** with your own.  
+- Keep the **filename as `logo.jpg`** unless you also update the workflow.  
 - Edit **`.github/themes/theme.yaml`** to adjust **brand colors, fonts, and layout**.  
 - 💡 Not comfortable with YAML? Paste the file into an LLM and request guided edits.
 
