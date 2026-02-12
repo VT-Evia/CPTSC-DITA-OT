@@ -3,4 +3,14 @@
     <context id="BAaZFVsUkdPcDJr" name="webitodowntown">
         <input href="../dita/document.ditamap"/>
     </context>
+    <publication id="webhelp" transtype="webhelp-responsive"/>
+    <deliverable id="d-webitodt-1770913163152" name="webitodt">
+        <?description {"content":"dt"}?>
+        <context idref="BAaZFVsUkdPcDJr"/>
+        <output href="webhelp-output"/>
+        <publication idref="webhelp">
+            <param href="cf://templates/Astatine" name="webhelp.publishing.template"/>
+            <param name="editlink.enable.edit.in.content.fusion.workspace" value="false"/>
+        </publication>
+    </deliverable>
 </project>
